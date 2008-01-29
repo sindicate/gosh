@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project basedir="." default="none" name="gosh">
+
+	<!-- Property file -->
+	
+	<property file="build.properties"/>
+	
+	<!-- File and Directory Names -->
+	
+	<property name="version.properties" value="src/java/ronnie/gosh/version.properties"/>
+	
+	<property name="src.java" value="src/java/"/>
+	<property name="src.test" value="src/test/"/>
+	
+	<property name="lib.compile" value="lib/compile/"/>
+	<property name="lib.test" value="tools/test/"/>
+	
+	<property name="tool.cobertura" value="tools/cobertura/"/>
+
+	<property name="build.home" value="../BUILDS/${ant.project.name}/"/>
+	<property name="build.dist" value="${build.home}/dist/"/>
+	
+	<!-- Classpaths -->
+	
+	<path id="compile.classpath">
+		<fileset dir="${lib.compile}" includes="*.jar"/>
+	</path>
+
+	<path id="compiletest.classpath">
+		<path refid="compile.classpath"/>
+		<fileset dir="${lib.test}" includes="*.jar"/>
+		<pathelement location="${build.home}/classes/"/>
+	</path>
+
+	<path id="test.classpath">
+		<path refid="compiletest.classpath"/>
+		<pathelement location="${build.home}/test-classes/"/>
+	</path>
+
+	<path id="cobertura.classpath">
+		<fileset dir="${tool.cobertura}" includes="*.jar"/>
+	</path>
+
+	<path id="coverage.classpath">
+		<pathelement location="${build.home}/cobertura-classes/"/>
+		<path refid="test.classpath"/>
+		<path refid="cobertura.classpath"/>
+<!--		<pathelement location="${tool.cobertura}/cobertura-1.9.jar"/> -->
+	</path>
+
+	<path id="groovy.classpath">
+		<fileset dir="${lib.compile}" includes="groovy-*.jar"/>
+	</path>
+
+	<!-- Custom Ant Task Definitions -->
+	
+	<taskdef resource="testngtasks" classpath="${lib.test}/testng-5.7-jdk15.jar"/>
+	<taskdef resource="tasks.properties" classpathref="cobertura.classpath"/>
+	<taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovy.classpath"/>
+
+	<!-- Default target -->
+	
+	<target name="none">
+		<echo message="Use ant -p to see available targets"/>
+	</target>
+
+	<!-- Targets -->
+	
+	<target name="clean" description="Cleans everything">
+		<delete dir="${build.home}"/>
+	</target>
+
+	<target name="compile"> <!-- Compiles the classes -->
+		<echo message="java.home=${java.home}"/>
+		<mkdir dir="${build.home}/classes/"/>
+		<groovyc destdir="${build.home}/classes" includes="**/*.groovy,**/*.java">
+			<classpath refid="compile.classpath"/>
+			<!-- <src path="${src.override}"/> -->
+			<src path="${src.java}"/>
+			<javac source="1.5" target="1.5" debug="yes" deprecation="no" optimize="yes">
+				<classpath refid="compile.classpath"/>
+			</javac>
+		</groovyc>
+	</target>
+
+	<target name="build" depends="compile"> <!-- Prepares the jar folder -->
+		<copy todir="${build.home}/classes/" preservelastmodified="yes">
+			<fileset dir="${src.java}" excludes="**/*.java,**/*.class"/>
+		</copy>
+	</target>
+
+	<target name="compiletest" depends="compile"> <!-- Compiles the test classes -->
+		<mkdir dir="${build.home}/test-classes/"/>
+		<javac optimize="true" debug="true" deprecation="true" srcdir="${src.test}" destdir="${build.home}/test-classes/" classpathref="compiletest.classpath"/>
+	</target>
+	
+	<target name="buildtest" depends="build,compiletest"> <!-- Prepares the test folder -->
+		<copy todir="${build.home}/test-classes/" preservelastmodified="yes">
+			<fileset dir="${src.test}" excludes="**/*.java,**/*.class"/>
+		</copy>
+	</target>
+	
+	<target name="test" depends="buildtest" description="Runs all tests">
+		<testng classpathref="test.classpath" outputDir="${build.home}/test-reports/" haltOnFailure="true" verbose="2">
+			<xmlfileset file="${build.home}/test-classes/test.xml"/>
+		</testng>
+	</target>
+	
+	<target name="coverage" depends="buildtest" description="Runs all tests including coverage">
+		<mkdir dir="${build.home}/cobertura-classes/"/>
+		<echo message="instrument"/>
+		<cobertura-instrument datafile="${build.home}/cobertura.ser" todir="${build.home}/cobertura-classes/" taskname="cobertura">
+			<fileset dir="${build.home}/classes/" includes="**/*.class"/>
+		</cobertura-instrument>
+		<echo message="instrumented"/>
+		<testng classpathref="coverage.classpath" outputDir="${build.home}/test-reports/" haltOnFailure="true" verbose="2">
+			<sysproperty key="net.sourceforge.cobertura.datafile" file="${build.home}/cobertura.ser"/>
+			<xmlfileset file="${build.home}/test-classes/test.xml"/>
+		</testng>
+		<echo message="running test"/>
+		<cobertura-report datafile="${build.home}/cobertura.ser" destdir="${build.home}/coverage-reports" srcdir="${src.java}" taskname="cobertura"/>
+		<echo message="reported"/>
+	</target>
+
+	<target name="updateversion"> <!-- Pulls the revision number from subversion -->
+		<exec executable="svn" spawn="false" dir="${basedir}"><arg line="revert ${version.properties}"/></exec> <!-- Revert the version.properties to prevent an M from being appended to the revision number. -->
+		<exec executable="svnversion" spawn="false" dir="${basedir}" output="${version.properties}"><arg line="-n ."/></exec> <!-- Update the properties file. -->
+		<replaceregexp file="${version.properties}" match="^(\d+:)?(\d+[MS]*)$" replace="module.version=2.0.\2" byline="false"/> <!-- svnversion returns either nnnn:vvvv or vvvv, we only need the vvvv part. This part can have a trailing M or S for modified or switched. -->
+		<loadproperties srcFile="${version.properties}"/>
+		<echo message="Version: ${module.version}"/>
+	</target>
+	
+	<target name="jar" depends="build,updateversion"> <!-- Builds the jar file -->
+		<mkdir dir="${build.dist}"/>
+		<jar destfile="${build.dist}/${ant.project.name}-${module.version}.jar" compress="true">
+			<fileset dir="${build.home}/classes/"/>
+			<manifest>
+				<attribute name="Version" value="${module.version}"/>
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="srcjar" depends="updateversion"> <!-- Builds the src jar file -->
+		<mkdir dir="${build.dist}"/>
+		<jar destfile="${build.dist}/${ant.project.name}-${module.version}-src.jar" compress="true">
+			<fileset dir="${src.java}" includes="**/*.java"/>
+			<manifest>
+				<attribute name="Version" value="${module.version}"/>
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="javadoc" description="Builds the javadoc">
+		<javadoc source="1.5" destdir="${build.dist}/doc/api" sourcepath="${src.java}" packagenames="*" linkoffline="http://java.sun.com/j2se/1.5.0/docs/api doc/jdk1.5.0 com.logicacmg.idt.commons">
+			<classpath refid="compile.classpath"/>
+		</javadoc>
+	</target>
+
+	<target name="javadocjar" depends="javadoc,updateversion" description="Builds a javadoc jar">
+		<jar destfile="${build.dist}/${ant.project.name}-${module.version}-javadoc.jar" compress="true">
+			<fileset dir="${build.dist}/doc/api/"/>
+			<manifest>
+				<attribute name="Version" value="${module.version}"/>
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="dist" depends="clean,jar,srcjar,javadocjar" description="Builds a distribution"/>
+
+</project>
