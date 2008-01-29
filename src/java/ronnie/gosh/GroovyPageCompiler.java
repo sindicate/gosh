@@ -1,20 +1,21 @@
 package ronnie.gosh;
 
+import groovy.lang.Closure;
+import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyCodeSource;
+import groovy.lang.GroovyObject;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
-
-import groovy.lang.Closure;
-import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyCodeSource;
-import groovy.lang.GroovyObject;
 
 import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.util.Assert;
@@ -39,7 +40,7 @@ public class GroovyPageCompiler
 		if( path != null )
 			pkg += "." + path.replaceAll( "/", "." );
 			
-		String script = new Parser().parse( reader, pkg, name );
+		String script = new Parser2().parse( new Parser1( reader ), pkg, name );
 		log.debug( "Generated groovy:\n" + script );
 
 		GroovyClassLoader loader = new GroovyClassLoader();
@@ -71,7 +72,7 @@ public class GroovyPageCompiler
 				FileReader in = new FileReader( baseDir.getPath() + "/" + page );
 				try
 				{
-					script = new Parser().parse( in, packag, name );
+					script = new Parser2().parse( new Parser1( in ), packag, name );
 				}
 				finally
 				{
@@ -94,138 +95,141 @@ public class GroovyPageCompiler
 			System.out.println( "Precompiled " + count + " pages" );
 	}
 	
-	static protected class Parser
+	static protected class Parser1
+	{
+		protected Reader reader;
+		protected Stack< Integer > pushBack = new Stack();
+		protected Stack< Integer > pushBackCopy;
+		
+		protected Parser1( Reader reader )
+		{
+			if( !reader.markSupported() )
+				reader = new BufferedReader( reader );
+			this.reader = reader;
+		}
+		
+		protected int read()
+		{
+			if( this.pushBack.isEmpty() )
+				try
+				{
+					return this.reader.read();
+				}
+				catch( IOException e )
+				{
+					throw new SystemException( e );
+				}
+			return this.pushBack.pop();
+		}
+		
+		protected void unread( int c )
+		{
+			this.pushBack.push( c );
+		}
+		
+		protected void mark( int readAheadLimit )
+		{
+			try
+			{
+				this.reader.mark( readAheadLimit );
+			}
+			catch( IOException e )
+			{
+				throw new SystemException( e );
+			}
+			this.pushBackCopy = (Stack)this.pushBack.clone();
+		}
+		
+		protected void reset()
+		{
+			try
+			{
+				this.reader.reset();
+			}
+			catch( IOException e )
+			{
+				throw new SystemException( e );
+			}
+			this.pushBack = this.pushBackCopy;
+			this.pushBackCopy = null;
+		}
+		
+		protected void readWhitespace()
+		{
+			Reader reader = this.reader;
+			try
+			{
+				int c = reader.read();
+				while( Character.isSpaceChar( (char)c ) )
+					c = reader.read();
+				unread( c );
+			}
+			catch( IOException e )
+			{
+				throw new SystemException( e );
+			}
+		}
+	}
+	
+	static protected class Parser2
 	{
 		static final private Logger log = Logger.getLogger( GroovyPageCompiler.class );
 
-		protected Parser()
+		protected Parser2()
 		{
 			// Constructor
 		}
 		
-		protected String parse( Reader reader, String pkg, String cls )
+		protected String parse( Parser1 reader, String pkg, String cls )
 		{
-			if( !reader.markSupported() )
-				reader = new BufferedReader( reader );
-			
 			Writer writer = new Writer();
 			writer.writeRaw( "package " + pkg + ";class " + cls + "{Closure getClosure(){return{" );
-			try
-			{
-				// Read leading whitespace, this makes it easier to set the characterencoding (or contentType) at the start of the ghtml (or the template)
-				int c = reader.read();
-				while( Character.isSpaceChar( (char)c ) )
-					c = reader.read();
-				
-				boolean startOfLine = true;
-				StringBuilder buffer = new StringBuilder( 100 );
-				StringBuilder buffer2 = new StringBuilder( 100 );
-				
-				log.trace( "-> parse" );
-				while( true )
-				{
-					if( c == -1 )
-						break;
-					
-//					Assert.isFalse( c == 10, "No carriage returns" ); // no carriage returns
-					
-					if( startOfLine && Character.isWhitespace( c ) )
-						buffer.append( (char)c );
-					else
-					{
-						if( c == '$' )
-						{
-							if( startOfLine )
-							{
-								startOfLine = false;
-								if( buffer.length() > 0 )
-									writer.writeAsString( buffer );
-							}
-							// TODO And without {}?
-							reader.mark( 10 );
-							c = reader.read();
-							if( c == '{' )
-								readEuh( reader, writer, MODES.STRING );
-							else
-							{
-								writer.writeAsString( '$' );
-								reader.reset();
-							}
-						}
-						else if( c == '<' )
-						{
-							reader.mark( 10 );
-							c = reader.read();
-							if( c == '%' )
-							{
-								reader.mark( 10 );
-								c = reader.read();
-								if( c == '=' )
-								{
-									if( startOfLine )
-									{
-										startOfLine = false;
-										if( buffer.length() > 0 )
-											writer.writeAsString( buffer );
-									}
-									readScript( reader, writer, MODES.EXPRESSION );
-								}
-								else if( c == '-' && reader.read() == '-' )
-								{
-									if( startOfLine )
-									{
-										startOfLine = false;
-										if( buffer.length() > 0 )
-											writer.writeAsString( buffer );
-									}
-									readComment( reader );
-								}
-								else
-								{
-									reader.reset();
-									Writer writer2 = new Writer();
-									readScript( reader, writer2, MODES.SCRIPT );
-									if( startOfLine )
-									{
-										startOfLine = false;
 
-										buffer2.setLength( 0 );
-										reader.mark( 1 );
-										c = reader.read();
-										while( Character.isWhitespace( c ) && c != '\n' )
-										{
-											buffer2.append( (char)c );
-											reader.mark( 1 );
-											c = reader.read();
-										}
-										if( c == '\n' )
-										{
-											if( buffer.length() > 0 )
-												writer.writeAsScript( buffer );
-											writer.writeAsScript( writer2.buffer );
-											if( buffer2.length() > 0 )
-												writer.writeAsScript( buffer2 );
-											writer.writeAsScript( '\n' ); // Must not lose newlines
-											startOfLine = true;
-											buffer.setLength( 0 );
-										}
-										else
-										{
-											reader.reset();
-											if( buffer.length() > 0 )
-												writer.writeAsString( buffer );
-											writer.writeAsScript( writer2.buffer );
-											if( buffer2.length() > 0 )
-												writer.writeAsString( buffer2 );
-										}
-									}
-									else
-									{
-										writer.writeAsScript( writer2.buffer );
-									}
-								}
-							}
-							else
+			// Read leading whitespace, this makes it easier to set the characterencoding (or contentType) at the start
+			// of the ghtml (or the template)
+			reader.readWhitespace();
+
+			boolean startOfLine = true;
+			StringBuilder buffer = new StringBuilder( 100 );
+			StringBuilder buffer2 = new StringBuilder( 100 );
+
+			log.trace( "-> parse" );
+			int c = reader.read();
+			while( true )
+			{
+				if( c == -1 )
+					break;
+
+				if( startOfLine && Character.isWhitespace( c ) )
+					buffer.append( (char)c );
+				else
+				{
+					if( c == '$' )
+					{
+						if( startOfLine )
+						{
+							startOfLine = false;
+							if( buffer.length() > 0 )
+								writer.writeAsString( buffer );
+						}
+						// TODO And without {}?
+						c = reader.read();
+						if( c == '{' )
+							readEuh( reader, writer, MODES.STRING );
+						else
+						{
+							writer.writeAsString( '$' );
+							reader.unread( c );
+						}
+					}
+					else if( c == '<' )
+					{
+						c = reader.read();
+						if( c == '%' )
+						{
+							reader.mark( 2 );
+							c = reader.read();
+							if( c == '=' )
 							{
 								if( startOfLine )
 								{
@@ -233,56 +237,60 @@ public class GroovyPageCompiler
 									if( buffer.length() > 0 )
 										writer.writeAsString( buffer );
 								}
-								writer.writeAsString( '<' );
-								reader.reset();
+								readScript( reader, writer, MODES.EXPRESSION );
 							}
-						}
-						else if( c == '\\' )
-						{
-							if( startOfLine )
+							else if( c == '-' && reader.read() == '-' )
 							{
-								startOfLine = false;
-								if( buffer.length() > 0 )
-									writer.writeAsString( buffer );
-							}
-							reader.mark( 10 );
-							c = reader.read();
-							if( c == '$' )
-							{
-								writer.writeAsString( '\\' );
-								writer.writeAsString( '$' );
+								if( startOfLine )
+								{
+									startOfLine = false;
+									if( buffer.length() > 0 )
+										writer.writeAsString( buffer );
+								}
+								readComment( reader );
 							}
 							else
 							{
-								writer.writeAsString( '\\' );
-								writer.writeAsString( '\\' );
 								reader.reset();
+								Writer writer2 = new Writer();
+								readScript( reader, writer2, MODES.SCRIPT );
+								if( startOfLine )
+								{
+									startOfLine = false;
+
+									buffer2.setLength( 0 );
+									c = reader.read();
+									while( Character.isWhitespace( c ) && c != '\n' )
+									{
+										buffer2.append( (char)c );
+										c = reader.read();
+									}
+									if( c == '\n' )
+									{
+										if( buffer.length() > 0 )
+											writer.writeAsScript( buffer );
+										writer.writeAsScript( writer2.buffer );
+										if( buffer2.length() > 0 )
+											writer.writeAsScript( buffer2 );
+										writer.writeAsScript( '\n' ); // Must not lose newlines
+										startOfLine = true;
+										buffer.setLength( 0 );
+									}
+									else
+									{
+										reader.unread( c );
+										if( buffer.length() > 0 )
+											writer.writeAsString( buffer );
+										writer.writeAsScript( writer2.buffer );
+										if( buffer2.length() > 0 )
+											writer.writeAsString( buffer2 );
+									}
+								}
+								else
+								{
+									writer.writeAsScript( writer2.buffer );
+								}
 							}
-						}
-						else if( c == '"' )
-						{
-							if( startOfLine )
-							{
-								startOfLine = false;
-								if( buffer.length() > 0 )
-									writer.writeAsString( buffer );
-							}
-							writer.writeAsString( '\\' );
-							writer.writeAsString( (char)c );
-						}
-						else if( c == '\n' )
-						{
-							if( startOfLine )
-							{
-								if( buffer.length() > 0 )
-									writer.writeAsString( buffer );
-							}
-							else
-							{
-								startOfLine = true;
-								buffer.setLength( 0 );
-							}
-							writer.writeAsString( (char)c );
 						}
 						else
 						{
@@ -292,16 +300,69 @@ public class GroovyPageCompiler
 								if( buffer.length() > 0 )
 									writer.writeAsString( buffer );
 							}
-							writer.writeAsString( (char)c );
+							writer.writeAsString( '<' );
+							reader.unread( c );
 						}
 					}
-					
-					c = reader.read();
+					else if( c == '\\' )
+					{
+						if( startOfLine )
+						{
+							startOfLine = false;
+							if( buffer.length() > 0 )
+								writer.writeAsString( buffer );
+						}
+						c = reader.read();
+						if( c == '$' )
+						{
+							writer.writeAsString( '\\' );
+							writer.writeAsString( '$' );
+						}
+						else
+						{
+							writer.writeAsString( '\\' );
+							writer.writeAsString( '\\' );
+							reader.unread( c );
+						}
+					}
+					else if( c == '"' )
+					{
+						if( startOfLine )
+						{
+							startOfLine = false;
+							if( buffer.length() > 0 )
+								writer.writeAsString( buffer );
+						}
+						writer.writeAsString( '\\' );
+						writer.writeAsString( (char)c );
+					}
+					else if( c == '\n' )
+					{
+						if( startOfLine )
+						{
+							if( buffer.length() > 0 )
+								writer.writeAsString( buffer );
+						}
+						else
+						{
+							startOfLine = true;
+							buffer.setLength( 0 );
+						}
+						writer.writeAsString( (char)c );
+					}
+					else
+					{
+						if( startOfLine )
+						{
+							startOfLine = false;
+							if( buffer.length() > 0 )
+								writer.writeAsString( buffer );
+						}
+						writer.writeAsString( (char)c );
+					}
 				}
-			}
-			catch( IOException e )
-			{
-				throw new SystemException( e );
+
+				c = reader.read();
 			}
 			log.trace( "<- parse" );
 
@@ -312,7 +373,7 @@ public class GroovyPageCompiler
 			return writer.getString();
 		}
 		
-		protected void readScript( Reader reader, Writer writer, MODES mode ) throws IOException
+		protected void readScript( Parser1 reader, Writer writer, MODES mode )
 		{
 			Assert.isTrue( mode == MODES.SCRIPT || mode == MODES.EXPRESSION );
 			
@@ -327,12 +388,11 @@ public class GroovyPageCompiler
 					readString( reader, writer, mode );
 				else if( c == '%' )
 				{
-					reader.mark( 10 );
 					c = reader.read();
 					if( c == '>' )
 						break;
+					reader.unread( c );
 					writer.writeAs( '%', mode );
-					reader.reset();
 				}
 				else
 					writer.writeAs( (char)c, mode );
@@ -340,7 +400,7 @@ public class GroovyPageCompiler
 			log.trace( "<- readScript" );
 		}
 		
-		protected void readGString( Reader reader, Writer writer, MODES mode ) throws IOException
+		protected void readGString( Parser1 reader, Writer writer, MODES mode )
 		{
 			log.trace( "-> readGString" );
 			writer.writeAs( '"', mode );
@@ -356,7 +416,6 @@ public class GroovyPageCompiler
 						break;
 					if( c == '$' )
 					{
-						reader.mark( 10 );
 						c = reader.read();
 						if( c == '{' )
 						{
@@ -364,8 +423,8 @@ public class GroovyPageCompiler
 						}
 						else
 						{
+							reader.unread( c );
 							writer.writeAs( '$', mode );
-							reader.reset();
 						}
 					}
 					else
@@ -381,7 +440,7 @@ public class GroovyPageCompiler
 			log.trace( "<- readGString" );
 		}
 		
-		protected void readString( Reader reader, Writer writer, MODES mode ) throws IOException
+		protected void readString( Parser1 reader, Writer writer, MODES mode )
 		{
 			log.trace( "-> readString" );
 			writer.writeAs( '\'', mode );
@@ -399,7 +458,7 @@ public class GroovyPageCompiler
 			log.trace( "<- readString" );
 		}
 		
-		protected void readEuh( Reader reader, Writer writer, MODES mode ) throws IOException
+		protected void readEuh( Parser1 reader, Writer writer, MODES mode )
 		{
 			log.trace( "-> readEuh" );
 			writer.writeAs( '$', mode );
@@ -421,7 +480,7 @@ public class GroovyPageCompiler
 			log.trace( "<- readEuh" );
 		}
 		
-		protected void readComment( Reader reader ) throws IOException
+		protected void readComment( Parser1 reader )
 		{
 			log.trace( "-> readComment" );
 			while( true )

@@ -12,8 +12,7 @@
 	<classpathentry kind="lib" path="lib/compile/standard-2.4.jar"/>
 	<classpathentry kind="lib" path="lib/compile/idt-commons-2.0.140.jar"/>
 	<classpathentry kind="lib" path="lib/compile/hibernate-3.2.5.jar"/>
-	<classpathentry kind="lib" path="lib/compile/groovy-1.6-beta-1-SNAPSHOT.jar"/>
-	<classpathentry exported="true" kind="var" path="GROOVY_ECLIPSE_HOME/groovy-all-1.5.0.jar"/>
+	<classpathentry kind="lib" path="lib/compile/groovy-all-1.6-beta-1-SNAPSHOT.jar"/>
 	<classpathentry exported="true" kind="lib" path="groovy-bin"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
