@@ -18,7 +18,7 @@
 	
 	<property name="tool.cobertura" value="tools/cobertura/"/>
 
-	<property name="build.home" value="../BUILDS/${ant.project.name}/"/>
+	<property name="build.home" value="../BUILD/${ant.project.name}/"/>
 	<property name="build.dist" value="${build.home}/dist/"/>
 	
 	<!-- Classpaths -->
@@ -126,19 +126,23 @@
 	<target name="updateversion"> <!-- Pulls the revision number from subversion -->
 		<exec executable="svn" spawn="false" dir="${basedir}"><arg line="revert ${version.properties}"/></exec> <!-- Revert the version.properties to prevent an M from being appended to the revision number. -->
 		<exec executable="svnversion" spawn="false" dir="${basedir}" output="${version.properties}"><arg line="-n ."/></exec> <!-- Update the properties file. -->
-		<replaceregexp file="${version.properties}" match="^(\d+:)?(\d+[MS]*)$" replace="module.version=2.0.\2" byline="false"/> <!-- svnversion returns either nnnn:vvvv or vvvv, we only need the vvvv part. This part can have a trailing M or S for modified or switched. -->
+		<replaceregexp file="${version.properties}" match="^(\d+:)?(\d+[MS]*)$" replace="module.version=1.0.\2" byline="false"/> <!-- svnversion returns either nnnn:vvvv or vvvv, we only need the vvvv part. This part can have a trailing M or S for modified or switched. -->
 		<loadproperties srcFile="${version.properties}"/>
 		<echo message="Version: ${module.version}"/>
 	</target>
 	
-	<target name="jar" depends="build,updateversion"> <!-- Builds the jar file -->
+	<target name="jar" depends="build">
 		<mkdir dir="${build.dist}"/>
-		<jar destfile="${build.dist}/${ant.project.name}-${module.version}.jar" compress="true">
+		<jar destfile="${build.dist}/${ant.project.name}.jar" compress="true">
 			<fileset dir="${build.home}/classes/"/>
 			<manifest>
 				<attribute name="Version" value="${module.version}"/>
 			</manifest>
 		</jar>
+	</target>
+
+	<target name="jar-versioned" depends="build,jar,updateversion"> <!-- Builds the jar file -->
+		<copy file="${build.dist}/${ant.project.name}.jar" preservelastmodified="yes" tofile="${build.dist}/${ant.project.name}=${module.version}.jar"/>
 	</target>
 
 	<target name="srcjar" depends="updateversion"> <!-- Builds the src jar file -->
@@ -166,6 +170,6 @@
 		</jar>
 	</target>
 
-	<target name="dist" depends="clean,jar,srcjar,javadocjar" description="Builds a distribution"/>
+	<target name="dist" depends="clean,jar-versioned,srcjar,javadocjar" description="Builds a distribution"/>
 
 </project>
