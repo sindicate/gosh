@@ -53,11 +53,12 @@
 		<fileset dir="${lib.compile}" includes="groovy-*.jar"/>
 	</path>
 
-	<!-- Custom Ant Task Definitions -->
+	<!-- Tasks -->
 	
-	<taskdef resource="testngtasks" classpath="${lib.test}/testng-5.7-jdk15.jar"/>
-	<taskdef resource="tasks.properties" classpathref="cobertura.classpath"/>
-	<taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovy.classpath"/>
+	<target name="groovytasks">
+		<taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovy.classpath"/>
+		<taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy" classpathref="groovy.classpath"/>
+	</target>
 
 	<!-- Default target -->
 	
@@ -71,7 +72,7 @@
 		<delete dir="${build.home}"/>
 	</target>
 
-	<target name="compile"> <!-- Compiles the classes -->
+	<target name="compile" depends="groovytasks"> <!-- Compiles the classes -->
 		<echo message="java.home=${java.home}"/>
 		<mkdir dir="${build.home}/classes/"/>
 		<groovyc destdir="${build.home}/classes" includes="**/*.groovy,**/*.java">
@@ -102,12 +103,15 @@
 	</target>
 	
 	<target name="test" depends="buildtest" description="Runs all tests">
+		<taskdef resource="testngtasks" classpath="${lib.test}/testng-5.7-jdk15.jar"/>
 		<testng classpathref="test.classpath" outputDir="${build.home}/test-reports/" haltOnFailure="true" verbose="2">
 			<xmlfileset file="${build.home}/test-classes/test.xml"/>
 		</testng>
 	</target>
 	
 	<target name="coverage" depends="buildtest" description="Runs all tests including coverage">
+		<taskdef resource="testngtasks" classpath="${lib.test}/testng-5.7-jdk15.jar"/>
+		<taskdef resource="tasks.properties" classpathref="cobertura.classpath"/>
 		<mkdir dir="${build.home}/cobertura-classes/"/>
 		<echo message="instrument"/>
 		<cobertura-instrument datafile="${build.home}/cobertura.ser" todir="${build.home}/cobertura-classes/" taskname="cobertura">

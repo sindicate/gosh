@@ -40,7 +40,7 @@ public class GroovyPageCompiler
 		if( path != null )
 			pkg += "." + path.replaceAll( "/", "." );
 			
-		String script = new Parser2().parse( new Parser1( reader ), pkg, name );
+		String script = new Parser().parse( new Scanner( reader ), pkg, name );
 		log.debug( "Generated groovy:\n" + script );
 
 		GroovyClassLoader loader = new GroovyClassLoader();
@@ -72,7 +72,7 @@ public class GroovyPageCompiler
 				FileReader in = new FileReader( baseDir.getPath() + "/" + page );
 				try
 				{
-					script = new Parser2().parse( new Parser1( in ), packag, name );
+					script = new Parser().parse( new Scanner( in ), packag, name );
 				}
 				finally
 				{
@@ -95,13 +95,15 @@ public class GroovyPageCompiler
 			System.out.println( "Precompiled " + count + " pages" );
 	}
 	
-	static protected class Parser1
+	static protected class Scanner
 	{
+//		static final private Logger log = Logger.getLogger( Scanner.class );
+
 		protected Reader reader;
 		protected Stack< Integer > pushBack = new Stack();
-		protected Stack< Integer > pushBackCopy;
+		protected Stack< Integer > pushBackMarked;
 		
-		protected Parser1( Reader reader )
+		protected Scanner( Reader reader )
 		{
 			if( !reader.markSupported() )
 				reader = new BufferedReader( reader );
@@ -113,7 +115,17 @@ public class GroovyPageCompiler
 			if( this.pushBack.isEmpty() )
 				try
 				{
-					return this.reader.read();
+					int c = this.reader.read();
+					if( c == 13 )
+					{
+						c = this.reader.read();
+						if( c != 10 )
+						{
+							unread( c );
+							c = 10;
+						}
+					}
+					return c;
 				}
 				catch( IOException e )
 				{
@@ -137,7 +149,7 @@ public class GroovyPageCompiler
 			{
 				throw new SystemException( e );
 			}
-			this.pushBackCopy = (Stack)this.pushBack.clone();
+			this.pushBackMarked = (Stack)this.pushBack.clone();
 		}
 		
 		protected void reset()
@@ -150,168 +162,129 @@ public class GroovyPageCompiler
 			{
 				throw new SystemException( e );
 			}
-			this.pushBack = this.pushBackCopy;
-			this.pushBackCopy = null;
+			this.pushBack = this.pushBackMarked;
+			this.pushBackMarked = null;
 		}
 		
-		protected void readWhitespace()
+		protected String readWhitespace()
 		{
-			Reader reader = this.reader;
-			try
+			StringBuilder builder = new StringBuilder();
+			int c = read();
+			while( Character.isWhitespace( (char)c ) && c != '\n' )
 			{
-				int c = reader.read();
-				while( Character.isSpaceChar( (char)c ) )
-					c = reader.read();
-				unread( c );
+				builder.append( (char)c );
+				c = read();
 			}
-			catch( IOException e )
-			{
-				throw new SystemException( e );
-			}
+			unread( c );
+			return builder.toString();
 		}
 	}
 	
-	static protected class Parser2
+	static protected class Parser
 	{
-		static final private Logger log = Logger.getLogger( GroovyPageCompiler.class );
+//		static final private Logger log = Logger.getLogger( GroovyPageCompiler.class );
 
-		protected Parser2()
+		protected Parser()
 		{
 			// Constructor
 		}
 		
-		protected String parse( Parser1 reader, String pkg, String cls )
+		protected String parse( Scanner reader, String pkg, String cls )
 		{
 			Writer writer = new Writer();
 			writer.writeRaw( "package " + pkg + ";class " + cls + "{Closure getClosure(){return{" );
 
-			// Read leading whitespace, this makes it easier to set the characterencoding (or contentType) at the start
-			// of the ghtml (or the template)
-			reader.readWhitespace();
-
-			boolean startOfLine = true;
-			StringBuilder buffer = new StringBuilder( 100 );
-			StringBuilder buffer2 = new StringBuilder( 100 );
-
-			log.trace( "-> parse" );
+//			log.trace( "-> parse" );
+			String leading = reader.readWhitespace();
 			int c = reader.read();
-			while( true )
+			while( c != -1 )
 			{
-				if( c == -1 )
-					break;
-
-				if( startOfLine && Character.isWhitespace( c ) )
-					buffer.append( (char)c );
+				if( c == '<' )
+				{
+					c = reader.read();
+					if( c == '%' )
+					{
+						reader.mark( 2 );
+						c = reader.read();
+						if( c == '=' )
+						{
+							writer.writeAsString( leading ); leading = null;
+							readScript( reader, writer, MODES.EXPRESSION );
+						}
+						else if( c == '-' && reader.read() == '-' )
+						{
+							if( leading == null )
+								readComment( reader );
+							else
+							{
+								readComment( reader );
+								String trailing = reader.readWhitespace();
+								c = reader.read();
+								if( (char)c == '\n' )
+									// Comment on lines of his own, then ignore the lines.
+									leading = reader.readWhitespace();
+								else
+								{
+									reader.unread( c );
+									writer.writeAsString( leading ); leading = null;
+									writer.writeAsString( trailing );
+								}
+							}
+						}
+						else
+						{
+							reader.reset();
+							if( leading == null )
+								readScript( reader, writer, MODES.SCRIPT );
+							else
+							{
+								Writer writer2 = new Writer();
+								readScript( reader, writer2, MODES.SCRIPT );
+								String trailing = reader.readWhitespace();
+								c = reader.read();
+								if( (char)c == '\n' )
+								{
+									// If script on lines of his own, add the whitespace and the newline to the script.
+									writer.writeAsScript( leading ); leading = null;
+									writer.writeAsScript( writer2.buffer );
+									writer.writeAsScript( trailing );
+									writer.writeAsScript( '\n' ); // Must not lose newlines
+									leading = reader.readWhitespace();
+								}
+								else
+								{
+									reader.unread( c );
+									writer.writeAsString( leading ); leading = null;
+									writer.writeAsScript( writer2.buffer );
+									writer.writeAsString( trailing );
+								}
+							}
+						}
+					}
+					else
+					{
+						writer.writeAsString( leading ); leading = null;
+						writer.writeAsString( '<' );
+						reader.unread( c );
+					}
+				}
 				else
 				{
+					writer.writeAsString( leading ); leading = null;
 					if( c == '$' )
 					{
-						if( startOfLine )
-						{
-							startOfLine = false;
-							if( buffer.length() > 0 )
-								writer.writeAsString( buffer );
-						}
 						// TODO And without {}?
 						c = reader.read();
 						if( c == '{' )
-							readEuh( reader, writer, MODES.STRING );
+							readGStringExpression( reader, writer, MODES.STRING );
 						else
 						{
 							writer.writeAsString( '$' );
 							reader.unread( c );
 						}
 					}
-					else if( c == '<' )
-					{
-						c = reader.read();
-						if( c == '%' )
-						{
-							reader.mark( 2 );
-							c = reader.read();
-							if( c == '=' )
-							{
-								if( startOfLine )
-								{
-									startOfLine = false;
-									if( buffer.length() > 0 )
-										writer.writeAsString( buffer );
-								}
-								readScript( reader, writer, MODES.EXPRESSION );
-							}
-							else if( c == '-' && reader.read() == '-' )
-							{
-								if( startOfLine )
-								{
-									startOfLine = false;
-									if( buffer.length() > 0 )
-										writer.writeAsString( buffer );
-								}
-								readComment( reader );
-							}
-							else
-							{
-								reader.reset();
-								Writer writer2 = new Writer();
-								readScript( reader, writer2, MODES.SCRIPT );
-								if( startOfLine )
-								{
-									startOfLine = false;
-
-									buffer2.setLength( 0 );
-									c = reader.read();
-									while( Character.isWhitespace( c ) && c != '\n' )
-									{
-										buffer2.append( (char)c );
-										c = reader.read();
-									}
-									if( c == '\n' )
-									{
-										if( buffer.length() > 0 )
-											writer.writeAsScript( buffer );
-										writer.writeAsScript( writer2.buffer );
-										if( buffer2.length() > 0 )
-											writer.writeAsScript( buffer2 );
-										writer.writeAsScript( '\n' ); // Must not lose newlines
-										startOfLine = true;
-										buffer.setLength( 0 );
-									}
-									else
-									{
-										reader.unread( c );
-										if( buffer.length() > 0 )
-											writer.writeAsString( buffer );
-										writer.writeAsScript( writer2.buffer );
-										if( buffer2.length() > 0 )
-											writer.writeAsString( buffer2 );
-									}
-								}
-								else
-								{
-									writer.writeAsScript( writer2.buffer );
-								}
-							}
-						}
-						else
-						{
-							if( startOfLine )
-							{
-								startOfLine = false;
-								if( buffer.length() > 0 )
-									writer.writeAsString( buffer );
-							}
-							writer.writeAsString( '<' );
-							reader.unread( c );
-						}
-					}
 					else if( c == '\\' )
 					{
-						if( startOfLine )
-						{
-							startOfLine = false;
-							if( buffer.length() > 0 )
-								writer.writeAsString( buffer );
-						}
 						c = reader.read();
 						if( c == '$' )
 						{
@@ -327,44 +300,25 @@ public class GroovyPageCompiler
 					}
 					else if( c == '"' )
 					{
-						if( startOfLine )
-						{
-							startOfLine = false;
-							if( buffer.length() > 0 )
-								writer.writeAsString( buffer );
-						}
 						writer.writeAsString( '\\' );
 						writer.writeAsString( (char)c );
 					}
 					else if( c == '\n' )
 					{
-						if( startOfLine )
-						{
-							if( buffer.length() > 0 )
-								writer.writeAsString( buffer );
-						}
-						else
-						{
-							startOfLine = true;
-							buffer.setLength( 0 );
-						}
 						writer.writeAsString( (char)c );
+						leading = reader.readWhitespace();
 					}
 					else
 					{
-						if( startOfLine )
-						{
-							startOfLine = false;
-							if( buffer.length() > 0 )
-								writer.writeAsString( buffer );
-						}
 						writer.writeAsString( (char)c );
 					}
 				}
 
 				c = reader.read();
 			}
-			log.trace( "<- parse" );
+			writer.writeAsString( leading );
+
+//			log.trace( "<- parse" );
 
 			writer.endAll();
 
@@ -373,11 +327,11 @@ public class GroovyPageCompiler
 			return writer.getString();
 		}
 		
-		protected void readScript( Parser1 reader, Writer writer, MODES mode )
+		protected void readScript( Scanner reader, Writer writer, MODES mode )
 		{
 			Assert.isTrue( mode == MODES.SCRIPT || mode == MODES.EXPRESSION );
 			
-			log.trace( "-> readScript" );
+//			log.trace( "-> readScript" );
 			while( true )
 			{
 				int c = reader.read();
@@ -397,12 +351,12 @@ public class GroovyPageCompiler
 				else
 					writer.writeAs( (char)c, mode );
 			}
-			log.trace( "<- readScript" );
+//			log.trace( "<- readScript" );
 		}
 		
-		protected void readGString( Parser1 reader, Writer writer, MODES mode )
+		protected void readGString( Scanner reader, Writer writer, MODES mode )
 		{
-			log.trace( "-> readGString" );
+//			log.trace( "-> readGString" );
 			writer.writeAs( '"', mode );
 			boolean escaped = false;
 			while( true )
@@ -419,7 +373,7 @@ public class GroovyPageCompiler
 						c = reader.read();
 						if( c == '{' )
 						{
-							readEuh( reader, writer, mode );
+							readGStringExpression( reader, writer, mode );
 						}
 						else
 						{
@@ -437,12 +391,12 @@ public class GroovyPageCompiler
 				}
 			}
 			writer.writeAs( '"', mode );
-			log.trace( "<- readGString" );
+//			log.trace( "<- readGString" );
 		}
 		
-		protected void readString( Parser1 reader, Writer writer, MODES mode )
+		protected void readString( Scanner reader, Writer writer, MODES mode )
 		{
-			log.trace( "-> readString" );
+//			log.trace( "-> readString" );
 			writer.writeAs( '\'', mode );
 			boolean escaped = false;
 			while( true )
@@ -455,12 +409,12 @@ public class GroovyPageCompiler
 				writer.writeAs( (char)c, mode );
 			}
 			writer.writeAs( '\'', mode );
-			log.trace( "<- readString" );
+//			log.trace( "<- readString" );
 		}
 		
-		protected void readEuh( Parser1 reader, Writer writer, MODES mode )
+		protected void readGStringExpression( Scanner reader, Writer writer, MODES mode )
 		{
-			log.trace( "-> readEuh" );
+//			log.trace( "-> readEuh" );
 			writer.writeAs( '$', mode );
 			writer.writeAs( '{', mode );
 			while( true )
@@ -477,12 +431,12 @@ public class GroovyPageCompiler
 					writer.writeAs( (char)c, mode );
 			}
 			writer.writeAs( '}', mode );
-			log.trace( "<- readEuh" );
+//			log.trace( "<- readEuh" );
 		}
 		
-		protected void readComment( Parser1 reader )
+		protected void readComment( Scanner reader )
 		{
-			log.trace( "-> readComment" );
+//			log.trace( "-> readComment" );
 			while( true )
 			{
 				int c = reader.read();
@@ -503,7 +457,7 @@ public class GroovyPageCompiler
 						reader.reset();
 				}
 			}
-			log.trace( "<- readComment" );
+//			log.trace( "<- readComment" );
 		}
 	}
 	
@@ -532,6 +486,9 @@ public class GroovyPageCompiler
 		
 		protected void writeAsString( CharSequence string )
 		{
+			if( string == null || string.length() == 0 )
+				return;
+
 			endAllExcept( MODES.STRING );
 			if( this.mode == MODES.UNKNOWN )
 			{
@@ -562,6 +519,9 @@ public class GroovyPageCompiler
 		
 		protected void writeAsScript( CharSequence script )
 		{
+			if( script == null || script.length() == 0 )
+				return;
+			
 			endAllExcept( MODES.SCRIPT );
 			if( this.mode == MODES.UNKNOWN )
 				this.mode = MODES.SCRIPT;
@@ -576,6 +536,21 @@ public class GroovyPageCompiler
 				writeAsScript( c );
 			else if( mode == MODES.STRING )
 				writeAsString( c );
+			else
+				Assert.fail( "mode UNKNOWN not allowed" );
+		}
+		
+		protected void writeAs( CharSequence string, MODES mode )
+		{
+			if( string == null || string.length() == 0 )
+				return;
+			
+			if( mode == MODES.EXPRESSION )
+				Assert.fail( "mode EXPRESSION not allowed" );
+			else if( mode == MODES.SCRIPT )
+				writeAsScript( string );
+			else if( mode == MODES.STRING )
+				writeAsString( string );
 			else
 				Assert.fail( "mode UNKNOWN not allowed" );
 		}
