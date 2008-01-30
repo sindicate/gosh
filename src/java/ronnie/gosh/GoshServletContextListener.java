@@ -19,9 +19,9 @@ import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.profiling.ProfilingSupport;
 
 
-public class CustomContextLoaderListener implements ServletContextListener
+public class GoshServletContextListener implements ServletContextListener
 {
-	private static final Logger __LOGGER = Logger.getLogger( CustomContextLoaderListener.class );
+	private static final Logger __LOGGER = Logger.getLogger( GoshServletContextListener.class );
 
 	private Object contextLoader;
 
@@ -30,13 +30,13 @@ public class CustomContextLoaderListener implements ServletContextListener
 		// See also applicationContext.xml
 		
 		// TODO (RBloois -> RBloois) This is not right, the fact that for example tts.properties exists does not mean that it contains the property 'log.folder'. Use the utility I created for the VIP project.
-		URL url = CustomContextLoaderListener.class.getResource( "/TTS/tts.properties" );
+//		URL url = GoshServletContextListener.class.getResource( "/TTS/tts.properties" );
+//		if( url == null )
+		URL url = GoshServletContextListener.class.getResource( "/gosh.properties" );
 		if( url == null )
-			url = CustomContextLoaderListener.class.getResource( "/tts.properties" );
+			url = GoshServletContextListener.class.getResource( "/gosh-default.properties" );
 		if( url == null )
-			url = CustomContextLoaderListener.class.getResource( "/tts-default.properties" );
-		if( url == null )
-			throw new SystemException( "None of /TTS/tts.properties, /tts.properties, /tts-default.properties found" );
+			throw new SystemException( "None of /gosh.properties, /gosh-default.properties found" );
 		
 		System.out.println( "Reading log.folder from [" + url + "]" );
 		
@@ -66,7 +66,7 @@ public class CustomContextLoaderListener implements ServletContextListener
 
 		// ------
 		
-		Logger log = Logger.getLogger( CustomContextLoaderListener.class );
+		Logger log = Logger.getLogger( GoshServletContextListener.class );
 		log.info( "Read log.folder from [" + url + "], value is [" + folder + "], configured log4j log folders" );
 
 		ProfilingSupport.logMemoryAndProcessorCount( "init", true );
@@ -74,7 +74,7 @@ public class CustomContextLoaderListener implements ServletContextListener
 		boolean useGroovyClassLoader = false;
 		try
 		{
-			__LOGGER.info( "My classloader is [" + CustomContextLoaderListener.class.getClassLoader().getClass().getName() + "]" );
+			__LOGGER.info( "My classloader is [" + GoshServletContextListener.class.getClassLoader().getClass().getName() + "]" );
 			__LOGGER.info( "Context classloader is [" + Thread.currentThread().getContextClassLoader().getClass().getName() + "]" );
 			
 			if( useGroovyClassLoader )

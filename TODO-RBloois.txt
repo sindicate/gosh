@@ -1,0 +1,63 @@
+		Exceptionhandler in the dispatcher, see appstart
+		params through args is a risk
+		Extract gosh framework into seperate project
+		New markup:
+			<% ... %{ ... }%>
+			<% ... %{ ... }% ... %>
+			<%// ...
+		<%-- comment should also use the complete line algorithm
+		Removal of excess whitespace from the template, needs compile time script execution <%% removeExcessWhitespace = true %%>
+		Apply the improvements from GroovyPageCompiler to QueryCompiler
+		Precompile queries
+		Use one GroovyClassLoader
+		Using ghtml files for tags
+		Compression?
+		Merge groovypagemanager and querymanager. Merge groovypagecompiler and querycompiler.
+SPECIAL	Compile time execution <%% flkjflkj %%>
+			-> multiple pages from one template
+			-> pre generate html
+				-> further centralization 
+		Need default page
+		Test mocking with groovy in GoSH
+		binding of errors to fields?
+		errorcode translation
+		resourcebundles
+		Should the template be able to add things to the RequestContext?
+		Should args attributes also be made available directly, as long as no conflict with existing attributes.
+		Should templates also work without the call to fragment()? (body only)
+		Automatic log field
+		stacktrace on screen does not work correctly if response is already committed.
+
+DONE	Remove the script superclass from the ghtml's
+DONE	Rename .gsp to .ghtml
+DONE	gsp Resources via Spring?
+DONE	not given an argument to the query results in propertynotfound
+DONE	Don't read controllers and services from the classloader during development
+DONE	Bind to an array of ints? Configure params to return arrays of ints or whatever.
+DONE	How to add custom function libraries to gosh pages and controller actions
+DONE	Param type should be added not set
+DONE	OverridingMap for the args
+DONE	newsyear
+DONE	Args should fallback to params?, make a map out of the params
+DONE	Linenumbers in ghtml and gsql
+DONE	include action without the need to specify the controller
+DONE	Groovy does not add linenumbers to class files?
+DONE	Rename .sql to .gsql
+DONE	Implement RequestContext and RequestParamsWrapper in java 
+DONE	XML controllers should not have a default 'index' action
+DONE	Possibility to easier get to the MarkupBuilder
+DONE	Build for production (without the spring groovy integration)
+DONE	Login actions should always redirect, also if there is an error. We want to prevent the POST to appear in the browser history.
+DONE	Need to do something with the page packages
+DONE	Move pages from WEB-INF to classes
+DONE	Remove Script superclass from the gsql
+DONE	Don't escape \ in ${} expressions, maybe done
+DONE	Autoencode only for specific mimetypes.
+DONE	PageManagers: split reloading into precompiled and reloading.
+DONE	Include from other sources, like a normal include
+DONE	Appserver Include/forward (like servlets, jsps)
+DONE	Possibility to have gxml and ghtml and gcsv etc within one DispatcherServlet
+DONE	Page and query precompile
+
+Groovy exceptionhandling problems:
+	1. Calling getProperty() from java gives MissingPropertyExceptionNoStack
