@@ -1,3 +1,4 @@
+		GStringExpressions without { and }
 		Exceptionhandler in the dispatcher, see appstart
 		params through args is a risk
 		Extract gosh framework into seperate project

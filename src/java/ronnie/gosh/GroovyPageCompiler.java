@@ -277,6 +277,8 @@ public class GroovyPageCompiler
 						c = reader.read();
 						if( c == '{' )
 							readGStringExpression( reader, writer, MODES.STRING );
+						else if( c == '[' )
+							readMessage( reader, writer, MODES.STRING );
 						else
 						{
 							writer.writeAsString( '$' );
@@ -432,6 +434,20 @@ public class GroovyPageCompiler
 			}
 			writer.writeAs( '}', mode );
 //			log.trace( "<- readEuh" );
+		}
+		
+		protected void readMessage( Scanner reader, Writer writer, MODES mode )
+		{
+			writer.writeAs( "${message(\"", mode );
+			while( true )
+			{
+				int c = reader.read();
+				Assert.isTrue( c > 0 );
+				if( c == ']' )
+					break;
+				writer.writeAs( (char)c, mode );
+			}
+			writer.writeAs( "\")}", mode );
 		}
 		
 		protected void readComment( Scanner reader )
