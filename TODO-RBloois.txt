@@ -1,3 +1,4 @@
+		GroovyResources ipv resource files
 		Scraping another web page
 		GStringExpressions without { and }
 		Exceptionhandler in the dispatcher, see appstart
