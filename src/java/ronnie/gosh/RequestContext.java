@@ -367,6 +367,11 @@ public class RequestContext
 	{
 		return new MarkupBuilder( getOut() );
 	}
+	
+	public String message( String key )
+	{
+		return this.applicationContext.getMessageSource().getMessage( key, null, null );
+	}
 }
 
 class FlashKey

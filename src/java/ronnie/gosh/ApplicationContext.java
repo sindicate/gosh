@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.context.MessageSource;
 
 import ronnie.gosh.GoshDispatcherServlet.ResolvedRequest;
 
@@ -31,6 +32,7 @@ public class ApplicationContext implements BeanFactoryAware
 
 	protected BeanFactory beanFactory; 
 	protected GroovyPageManager pageManager;
+	protected MessageSource messageSource;
 	
 	// TODO If groovy removes this strange threadbound behaviour from the ExpandoMetaClass, then we can inject a property on the controller itself
 	protected WeakHashMap< MetaClass, Map > actions = new WeakHashMap< MetaClass, Map >();
@@ -172,5 +174,15 @@ public class ApplicationContext implements BeanFactoryAware
 	public Object getBean( String id, Object[] args )
 	{
 		return this.beanFactory.getBean( id, args );
+	}
+
+	public MessageSource getMessageSource()
+	{
+		return this.messageSource;
+	}
+
+	public void setMessageSource( MessageSource messageSource )
+	{
+		this.messageSource = messageSource;
 	}
 }
