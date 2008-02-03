@@ -22,13 +22,23 @@ public class GoshHibernateDaoSupport extends HibernateDaoSupport
 		return criteria.uniqueResult()
 	}
 	
-	Object findAll( Class domainClass )
+	List findAll( Class domainClass )
 	{
 		def criteria = session.createCriteria( domainClass )
 		return criteria.list()
 	}
 	
-	Object load( Class domainClass, Serializable id ) { session.load( domainClass, id ) }
+	Object load( Class domainClass, Serializable id ) 
+	{ 
+		def result = session.load( domainClass, id )
+		org.hibernate.Hibernate.initialize( result )
+		return result
+	}
+	
+	void update( object )
+	{
+		session.update( object )
+	}
 	
 	Object find( String hql, List args )
 	{

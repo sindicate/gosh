@@ -245,6 +245,11 @@ public class RequestContext
 		}
 	}
 
+//	public String link()
+//	{
+//		return link( new HashMap() );
+//	}
+	
 	public String link( Map< String, Object > args )
 	{
 		String controllerName = Util.removeString( args, "controller" );
@@ -273,14 +278,16 @@ public class RequestContext
 				urlBuilder.append( pathInfo );
 			}
 		}
-			
-		char c = '?';
-		for( Map.Entry< String, Object > arg : args.entrySet() )
-		{	urlBuilder.append( c );
-			urlBuilder.append( encodeURL( arg.getKey().toString() ) );
-			urlBuilder.append( '=' );
-			urlBuilder.append( encodeURL( encodeJSON( arg.getValue() ) ) );
-			c = '&';
+		
+		if( args != null )
+		{	char c = '?';
+			for( Map.Entry< String, Object > arg : args.entrySet() )
+			{	urlBuilder.append( c );
+				urlBuilder.append( encodeURL( arg.getKey().toString() ) );
+				urlBuilder.append( '=' );
+				urlBuilder.append( encodeURL( encodeJSON( arg.getValue() ) ) );
+				c = '&';
+			}
 		}
 		
 		return url( urlBuilder.toString() );

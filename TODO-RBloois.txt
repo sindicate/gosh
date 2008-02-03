@@ -1,3 +1,6 @@
+		out << GString, if value = null then output ""
+		Central configuration of templates
+		security problem: url params are visible through args, remove this?
 		GroovyResources ipv resource files
 		Scraping another web page
 		GStringExpressions without { and }
@@ -61,6 +64,7 @@ DONE	Include from other sources, like a normal include
 DONE	Appserver Include/forward (like servlets, jsps)
 DONE	Possibility to have gxml and ghtml and gcsv etc within one DispatcherServlet
 DONE	Page and query precompile
+DONE	Use [key(args)] as shortcut for ${message("key",[args])}
 
 Groovy exceptionhandling problems:
 	1. Calling getProperty() from java gives MissingPropertyExceptionNoStack

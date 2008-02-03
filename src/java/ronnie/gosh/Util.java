@@ -29,6 +29,10 @@ public class Util
 		}
 	}
 	
+	static String[] internalPackagesArray = new String[] { 
+		"org.codehaus.groovy.runtime.callsite."
+	};
+	
 	static String[] internalClassesArray = new String[] { 
 		"groovy.lang.Closure",
 		"groovy.lang.ExpandoMetaClass",
@@ -66,7 +70,7 @@ public class Util
 		"sun.reflect.DelegatingConstructorAccessorImpl",
 		"sun.reflect.DelegatingMethodAccessorImpl",
 		"sun.reflect.NativeConstructorAccessorImpl",
-		"sun.reflect.NativeMethodAccessorImpl",
+		"sun.reflect.NativeMethodAccessorImpl"
 	};
 	
 	static Set< String > internalClasses;
@@ -80,23 +84,31 @@ public class Util
 	{
 		StackTraceElement[] elements = throwable.getStackTrace();
 		int j = 0;
-		for( int i = 0; i < elements.length; i++ )
+		outer: for( int i = 0; i < elements.length; i++ )
 		{
 			StackTraceElement element = elements[ i ];
-			if( !internalClasses.contains( element.getClassName() ) )
-				elements[ j++ ] = element;
+			if( internalClasses.contains( element.getClassName() ) )
+				continue;
+			for( String pack : internalPackagesArray )
+				if( element.getClassName().startsWith( pack ) )
+					continue outer;
+			if( internalClasses.contains( element.getClassName() ) )
+				continue;
+			elements[ j++ ] = element;
 		}
-		StackTraceElement[] newElements = new StackTraceElement[ j ]; 
+		StackTraceElement[] newElements = new StackTraceElement[ j ];
 		System.arraycopy( elements, 0, newElements, 0, j );
 		throwable.setStackTrace( newElements );
-		
-		throwable = throwable.getCause(); 
+
+		throwable = throwable.getCause();
 		if( throwable != null )
 			transformToGroovy( throwable );
 	}
 	
 	static String removeString( Map map, String key )
 	{
+		if( map == null )
+			return null;
 		Object object = map.remove( key );
 		if( object instanceof GString )
 			return ( (GString)object ).toString();
