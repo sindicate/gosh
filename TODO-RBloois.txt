@@ -22,7 +22,21 @@
 SPECIAL	Compile time execution <%% flkjflkj %%>
 			-> multiple pages from one template
 			-> pre generate html
-				-> further centralization 
+				-> further centralization
+NOT	Compile time tag replacement
+			<app:table rows="${args.users}">
+				<column name="id" header="ID"/>
+				<column name="userName" header="Username"/>
+				<column name="email" header="Email Address"/>
+				<column name="firstName" header="First Name"/>
+				<column name="lastName" header="Last Name"/>
+				<column name="id" header="ID"/>
+				<column name="links" header="">
+					<a href="${link(action:"edit",id:it.id)}">edit</a>
+				</column>
+			</app:table>
+			Custom tags (in html) have no use, there aren't even understood by design tools.
+		Tag must be in control with respect to what it does during compile and runtime
 		Need default page
 		Test mocking with groovy in GoSH
 		binding of errors to fields?
