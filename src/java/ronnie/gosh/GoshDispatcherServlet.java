@@ -23,6 +23,8 @@ public class GoshDispatcherServlet extends HttpServlet
 {
 	static final private Logger log = Logger.getLogger( GoshDispatcherServlet.class );
 	
+	protected String defaultRequestEncoding = "UTF-8";
+	
 	protected WebApplicationContext webApplicationContext;
 	protected ApplicationContext applicationContext;
 	
@@ -104,6 +106,9 @@ public class GoshDispatcherServlet extends HttpServlet
 	@Override
 	protected void service( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException
 	{
+		if( request.getCharacterEncoding() == null )
+			request.setCharacterEncoding( this.defaultRequestEncoding );
+		
 		try
 		{
 			HttpUtil.logRequest( log, request );
