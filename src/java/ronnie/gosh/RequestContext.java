@@ -315,6 +315,8 @@ public class RequestContext
 	public String getContentType()
 	{
 		String type = this.response.getContentType();
+		if( type == null )
+			return null;
 		int pos = type.indexOf( ';' );
 		if( pos >= 0 )
 			return type.substring( 0, pos );
@@ -379,6 +381,11 @@ public class RequestContext
 	{
 		return this.applicationContext.getMessageSource().getMessage( key, null, null );
 	}
+	
+//	public StateManager getState()
+//	{
+//		return new StateManager( getSession() );
+//	}
 }
 
 class FlashKey

@@ -34,6 +34,11 @@ public class GoshHibernateDaoSupport extends HibernateDaoSupport
 		org.hibernate.Hibernate.initialize( result )
 		return result
 	}
+
+	void save( object )
+	{
+		session.save( object )
+	}
 	
 	void update( object )
 	{
