@@ -15,6 +15,7 @@ public class Table extends Component
 	{
 		protected String data;
 		protected String header;
+		protected boolean edit;
 	}
 
 	protected Map<String, String> attributes = new HashMap();
@@ -66,7 +67,16 @@ public class Table extends Component
 			for( Column column : this.columns )
 			{
 				out.print( "<td>" );
-				out.print( data.getString( column.data ) );
+				if( column.edit )
+				{
+					out.print( "<input name=\"" );
+					out.print( column.data );
+					out.print( "\" value=\"" );
+					out.print( data.getString( column.data ) );
+					out.print( "\"/>" );
+				}
+				else
+					out.print( data.getString( column.data ) );
 				out.print( "</td>" );
 			}
 		}

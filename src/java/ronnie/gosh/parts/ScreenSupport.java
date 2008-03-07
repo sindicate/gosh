@@ -10,11 +10,11 @@ import ronnie.gosh.RequestContext;
 
 
 // TODO Need part builder
-public abstract class FormSupport extends Composite implements Form
+public abstract class ScreenSupport extends Composite implements Screen
 {
 	protected RequestContext context;
 	
-	public FormSupport()
+	public ScreenSupport()
 	{
 		super( null );
 	}

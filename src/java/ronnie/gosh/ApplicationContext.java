@@ -21,7 +21,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.context.MessageSource;
 
-import ronnie.gosh.parts.Form;
+import ronnie.gosh.parts.Screen;
 
 import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.servlet.HttpUtil;
@@ -75,25 +75,25 @@ public class ApplicationContext implements BeanFactoryAware
 		RequestContext context = (RequestContext)this.beanFactory.getBean( "requestContext" );
 		context.configure( request, response, this, controllerName, args );
 		
-		Form form = (Form)context.getSession().getAttribute( controllerName );
-		if( form == null )
+		Screen screen = (Screen)context.getSession().getAttribute( controllerName );
+		if( screen == null )
 		{
-			form = getForm( controllerName );
-			if( form != null )
+			screen = getScreen( controllerName );
+			if( screen != null )
 			{
-				form.init();
-				context.getSession().setAttribute( controllerName, form );
+				screen.init();
+				context.getSession().setAttribute( controllerName, screen );
 			}
 		}
-		if( form != null )
+		if( screen != null )
 		{
-			form.call( context );
+			screen.call( context );
 			return;
 		}
 		
 		UnboundClosure action = getActionClosure( controllerName, actionName );
 		
-		// TODO Does the form also need the flash?
+		// TODO Does the screen also need the flash?
 		String flashKey = request.getParameter( RequestContext.FLASHKEY );
 		if( flashKey != null )
 		{
@@ -171,19 +171,19 @@ public class ApplicationContext implements BeanFactoryAware
 		}
 	}
 
-	public Form getForm( String formName )
+	public Screen getScreen( String screenName )
 	{
-		formName += "-form";
-		if( !this.beanFactory.containsBean( formName ) )
+		screenName += "-screen";
+		if( !this.beanFactory.containsBean( screenName ) )
 			return null;
-		return (Form)this.beanFactory.getBean( formName );
+		return (Screen)this.beanFactory.getBean( screenName );
 	}
 	
 	public GroovyObject getController( String controllerName )
 	{
 		controllerName += "-controller";
 		
-		// TODO Need to change the exception handling because it could also be a form instead
+		// TODO Need to change the exception handling because it could also be a screen instead
 		if( !this.beanFactory.containsBean( controllerName ) )
 			throw new ControllerNotFoundException( controllerName );
 		

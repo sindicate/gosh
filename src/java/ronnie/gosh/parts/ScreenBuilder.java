@@ -12,15 +12,15 @@ import ronnie.gosh.parts.Table.Column;
 
 import com.logicacmg.idt.commons.NotImplementedException;
 
-public class FormBuilder implements GroovyObject
+public class ScreenBuilder implements GroovyObject
 {
-	protected FormSupport form;
+	protected ScreenSupport screen;
 	protected Component current;
 	
-	public FormBuilder( FormSupport form )
+	public ScreenBuilder( ScreenSupport screen )
 	{
-		this.form = form;
-		this.current = form;
+		this.screen = screen;
+		this.current = screen;
 	}
 	
 	public Object call( Closure closure )
@@ -41,6 +41,19 @@ public class FormBuilder implements GroovyObject
 		throw new NotImplementedException();
 	}
 	
+//	protected Form form( Map args, Closure closure )
+//	{
+//		Form form = new Form( (Composite)this.current, args );
+//		this.current = form;
+//		
+//		closure.setDelegate( this );
+//		closure.call();
+//		
+//		this.current = form.parent;
+//
+//		return form;
+//	}
+
 	protected Table table( Map args, Closure closure )
 	{
 		Table table = new Table( (Composite)this.current, args );
@@ -60,6 +73,8 @@ public class FormBuilder implements GroovyObject
 		Column column = new Column();
 		column.data = (String)args.get( "data" );
 		column.header = (String)args.get( "header" );
+		Boolean edit = (Boolean)args.get( "edit" );
+		column.edit = edit != null ? edit : false;
 
 		Table table = (Table)this.current;
 		table.addColumn( column );
