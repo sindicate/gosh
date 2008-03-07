@@ -41,19 +41,35 @@ public class ScreenBuilder implements GroovyObject
 		throw new NotImplementedException();
 	}
 	
-//	protected Form form( Map args, Closure closure )
-//	{
-//		Form form = new Form( (Composite)this.current, args );
-//		this.current = form;
-//		
-//		closure.setDelegate( this );
-//		closure.call();
-//		
-//		this.current = form.parent;
-//
-//		return form;
-//	}
+	protected Form form( Closure closure )
+	{
+		return form( null, closure );
+	}
+	
+	protected Form form( Map args, Closure closure )
+	{
+		Form form = new Form( (Composite)this.current, args );
+		this.current = form;
+		
+		closure.setDelegate( this );
+		closure.call();
+		
+		this.current = form.parent;
 
+		return form;
+	}
+
+	protected Submit submit()
+	{
+		return submit( null );
+	}
+	
+	protected Submit submit( Map args )
+	{
+		return new Submit( (Composite)this.current, args );
+	}
+
+	// TODO Rename to datatable or something like that
 	protected Table table( Map args, Closure closure )
 	{
 		Table table = new Table( (Composite)this.current, args );

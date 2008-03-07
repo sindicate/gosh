@@ -2,8 +2,6 @@ package ronnie.gosh.parts;
 
 import groovy.lang.Closure;
 
-import java.io.PrintWriter;
-
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import ronnie.gosh.RequestContext;
@@ -50,8 +48,8 @@ public abstract class ScreenSupport extends Composite implements Screen
 	}
 	
 	@Override
-	public PrintWriter getOut()
+	public RequestContext getRequestContext()
 	{
-		return this.context.getOut();
+		return this.context;
 	}
 }

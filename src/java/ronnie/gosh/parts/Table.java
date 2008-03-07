@@ -2,7 +2,6 @@ package ronnie.gosh.parts;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,7 +17,6 @@ public class Table extends Component
 		protected boolean edit;
 	}
 
-	protected Map<String, String> attributes = new HashMap();
 	protected List< Column > columns;
 	protected List< DataObject > data;
 	
@@ -80,18 +78,12 @@ public class Table extends Component
 				out.print( "</td>" );
 			}
 		}
-		out.print( "</table>" );
-		//getOut().println( "Hello World! from Table" );
+		out.println( "</table>" );
 	}
 
 	public void addColumn( Column column )
 	{
 		this.columns.add( column );
-	}
-	
-	public void setClass( String name )
-	{
-		this.attributes.put( "class", name );
 	}
 	
 	public void setData( List< DataObject > data )
