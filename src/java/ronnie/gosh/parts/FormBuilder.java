@@ -3,7 +3,6 @@ package ronnie.gosh.parts;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
-import groovy.lang.MissingMethodException;
 
 import java.util.Map;
 
@@ -41,46 +40,35 @@ public class FormBuilder implements GroovyObject
 	{
 		throw new NotImplementedException();
 	}
-
-	@Override
-	public Object invokeMethod( String name, Object _args )
+	
+	protected Table table( Map args, Closure closure )
 	{
-		Object[] args = (Object[])_args;
-		if( name.equals( "table" ) )
-		{
-			if( args.length == 1 )
-			{
-				if( args[ 0 ] instanceof Closure )
-				{
-					Table table = new Table( (Composite)this.current );
-					this.current = table;
-					
-					Closure closure = (Closure)args[ 0 ];
-					closure.setDelegate( this );
-					closure.call();
-					
-					// TODO Check that columns have been added
-					return table;
-				}
-			}
-		}
-		else if( name.equals( "column" ) )
-		{
-			Table table = (Table)this.current;
-			if( args.length == 1 )
-			{
-				if( args[ 0 ] instanceof Map )
-				{
-					Map map = (Map)args[ 0 ];
-					Column column = new Column();
-					column.data = (String)map.get( "data" );
-					column.header = (String)map.get( "header" );
-					table.addColumn( column );
-					return column;
-				}
-			}
-		}
-		throw new MissingMethodException( name, this.form.getClass(), args );
+		Table table = new Table( (Composite)this.current, args );
+		this.current = table;
+		
+		closure.setDelegate( this );
+		closure.call();
+		
+		this.current = table.parent;
+
+		// TODO Check that columns have been added
+		return table;
+	}
+
+	protected Column column( Map args )
+	{
+		Column column = new Column();
+		column.data = (String)args.get( "data" );
+		column.header = (String)args.get( "header" );
+
+		Table table = (Table)this.current;
+		table.addColumn( column );
+		return column;
+	}
+
+    public Object invokeMethod( String name, Object args )
+	{
+		return getMetaClass().invokeMethod( this, name, args );
 	}
 
 	@Override

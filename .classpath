@@ -14,5 +14,15 @@
 	<classpathentry kind="lib" path="lib/compile/hibernate-3.2.5.jar"/>
 	<classpathentry exported="true" kind="lib" path="groovy-bin"/>
 	<classpathentry kind="lib" path="lib/compile/groovy-all-1.5.4.jar"/>
+	<classpathentry kind="lib" path="lib/compile/eclipse-emf-common-2.2.3.jar"/>
+	<classpathentry kind="lib" path="lib/compile/eclipse-emf-ecore-2.2.3.jar"/>
+	<classpathentry kind="lib" path="lib/compile/eclipse-emf-ecore-change-2.2.3.jar"/>
+	<classpathentry kind="lib" path="lib/compile/eclipse-emf-ecore-xmi-2.2.3.jar"/>
+	<classpathentry kind="lib" path="lib/compile/eclipse-xsd-2.2.3.jar"/>
+	<classpathentry kind="lib" path="lib/compile/tuscany-das-rdb-1.0-incubating-beta2.jar"/>
+	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-api-r2.1-1.0-incubating.jar"/>
+	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-impl-1.0-incubating.jar"/>
+	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-lib-1.0-incubating.jar"/>
+	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-tools-1.0-incubating.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
