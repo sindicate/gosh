@@ -9,6 +9,10 @@ import groovy.lang.GString;
 
 import com.logicacmg.idt.commons.util.Assert;
 
+/**
+ * 
+ * @author René M. de Bloois
+ */
 public class GStringBuilder
 {
 	protected List< String > strings = new ArrayList();

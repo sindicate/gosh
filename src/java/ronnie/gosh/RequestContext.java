@@ -381,6 +381,11 @@ public class RequestContext
 	{
 		return this.applicationContext.getMessageSource().getMessage( key, null, null );
 	}
+
+	public String getControllerName()
+	{
+		return this.controllerName;
+	}
 	
 //	public StateManager getState()
 //	{

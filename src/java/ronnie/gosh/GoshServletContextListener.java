@@ -122,6 +122,8 @@ public class GoshServletContextListener implements ServletContextListener
 
 	/**
 	 * Close the root web application context.
+	 * 
+	 * @param event 
 	 */
 	public void contextDestroyed( ServletContextEvent event )
 	{

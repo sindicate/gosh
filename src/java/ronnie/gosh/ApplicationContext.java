@@ -1,25 +1,27 @@
 package ronnie.gosh;
 
+import groovy.lang.Closure;
+import groovy.lang.GroovyObject;
+import groovy.lang.MetaClass;
+import groovy.lang.MetaProperty;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
-
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.context.MessageSource;
 
-import ronnie.gosh.GoshDispatcherServlet.ResolvedRequest;
-
-import groovy.lang.Closure;
-import groovy.lang.GroovyObject;
-import groovy.lang.MetaClass;
-import groovy.lang.MetaProperty;
+import ronnie.gosh.parts.Form;
 
 import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.servlet.HttpUtil;
@@ -33,6 +35,7 @@ public class ApplicationContext implements BeanFactoryAware
 	protected BeanFactory beanFactory; 
 	protected GroovyPageManager pageManager;
 	protected MessageSource messageSource;
+	protected boolean useActionNames = true;
 	
 	// TODO If groovy removes this strange threadbound behaviour from the ExpandoMetaClass, then we can inject a property on the controller itself
 	protected WeakHashMap< MetaClass, Map > actions = new WeakHashMap< MetaClass, Map >();
@@ -69,11 +72,28 @@ public class ApplicationContext implements BeanFactoryAware
 	
 	public void call( String controllerName, String actionName, HttpServletRequest request, HttpServletResponse response, Map args )
 	{
-		UnboundClosure action = getActionClosure( controllerName, actionName );
-		
 		RequestContext context = (RequestContext)this.beanFactory.getBean( "requestContext" );
 		context.configure( request, response, this, controllerName, args );
 		
+		Form form = (Form)context.getSession().getAttribute( controllerName );
+		if( form == null )
+		{
+			form = getForm( controllerName );
+			if( form != null )
+			{
+				form.init();
+				context.getSession().setAttribute( controllerName, form );
+			}
+		}
+		if( form != null )
+		{
+			form.call( context );
+			return;
+		}
+		
+		UnboundClosure action = getActionClosure( controllerName, actionName );
+		
+		// TODO Does the form also need the flash?
 		String flashKey = request.getParameter( RequestContext.FLASHKEY );
 		if( flashKey != null )
 		{
@@ -99,10 +119,71 @@ public class ApplicationContext implements BeanFactoryAware
 		call( resolved.controllerName, resolved.actionName, request, response, args );
 	}
 
+	protected String resolveActionName( HttpServletRequest request, String urlActionName )
+	{
+		return urlActionName;
+	}
+	
+	static final private Pattern pathInfoPattern1 = Pattern.compile( "/([^\\/]+)/?([^\\/]+)?/?(.+)?" );
+	static final private Pattern pathInfoPattern2 = Pattern.compile( "/([^\\/]+)/?(.+)?" );
+	
+	protected ResolvedRequest resolveRequest( HttpServletRequest request )
+	{
+		String pathInfo = request.getPathInfo();
+		if( pathInfo == null )
+			return null;
+		
+		Matcher matcher = this.useActionNames ? pathInfoPattern1.matcher( pathInfo ) : pathInfoPattern2.matcher( pathInfo ); 
+		if( !matcher.matches() )
+			return null;
+		
+		String controllerName = matcher.group( 1 );
+		String actionName = this.useActionNames ? resolveActionName( request, matcher.group( 2 ) ) : null;
+		String pathInfoRest = matcher.group( this.useActionNames ? 3 : 2 );
+		
+		return new ResolvedRequest( controllerName, actionName, pathInfoRest );
+	}
+	
+	public void call( HttpServletRequest request, HttpServletResponse response )
+	{
+		try
+		{
+			ResolvedRequest resolved = resolveRequest( request );
+			if( resolved == null )
+			{
+				response.sendError( HttpServletResponse.SC_NOT_FOUND, request.getRequestURI() );
+				return;
+			}
+			
+			try
+			{
+				call( resolved, request, response );
+			}
+			catch( RequestedResourceNotAvailableException e )
+			{
+				log.error( "", e );
+				response.sendError( HttpServletResponse.SC_NOT_FOUND, request.getRequestURI() );
+			}
+		}
+		catch( IOException e )
+		{
+			throw new SystemException( e );
+		}
+	}
+
+	public Form getForm( String formName )
+	{
+		formName += "-form";
+		if( !this.beanFactory.containsBean( formName ) )
+			return null;
+		return (Form)this.beanFactory.getBean( formName );
+	}
+	
 	public GroovyObject getController( String controllerName )
 	{
 		controllerName += "-controller";
 		
+		// TODO Need to change the exception handling because it could also be a form instead
 		if( !this.beanFactory.containsBean( controllerName ) )
 			throw new ControllerNotFoundException( controllerName );
 		
@@ -184,5 +265,19 @@ public class ApplicationContext implements BeanFactoryAware
 	public void setMessageSource( MessageSource messageSource )
 	{
 		this.messageSource = messageSource;
+	}
+	
+	static public class ResolvedRequest
+	{
+		protected String controllerName;
+		protected String actionName;
+		protected String pathInfo;
+		
+		public ResolvedRequest( String controllerName, String actionName, String pathInfoRest )
+		{
+			this.controllerName = controllerName;
+			this.actionName = actionName;
+			this.pathInfo = pathInfoRest;
+		}
 	}
 }
