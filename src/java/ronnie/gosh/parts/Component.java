@@ -4,7 +4,6 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import ronnie.gosh.RequestContext;
@@ -13,7 +12,7 @@ import com.logicacmg.idt.commons.util.Assert;
 
 public abstract class Component
 {
-	static private final Logger log = Logger.getLogger( Component.class );
+//	static private final Logger log = Logger.getLogger( Component.class );
 
 	protected String name;
 	protected Map<String, String> attributes = new HashMap();

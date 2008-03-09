@@ -4,7 +4,6 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 
-import java.util.List;
 import java.util.Map;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -12,6 +11,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import ronnie.gosh.parts.Table.Column;
 
 import com.logicacmg.idt.commons.NotImplementedException;
+import commonj.sdo.DataObject;
 
 public class ScreenBuilder implements GroovyObject
 {
@@ -72,8 +72,9 @@ public class ScreenBuilder implements GroovyObject
 	protected Table table( Map args, Closure closure )
 	{
 		String name = (String)args.remove( "name" );
-		List data = (List)args.remove( "data" );
-		Table table = new Table( name, this.current, data, args );
+		DataObject data = (DataObject)args.remove( "data" );
+		String path = (String)args.remove( "path" );
+		Table table = new Table( name, this.current, data, path, args );
 		
 		Composite old = this.current;
 		this.current = table;
@@ -90,7 +91,7 @@ public class ScreenBuilder implements GroovyObject
 	protected Column column( Map args )
 	{
 		Column column = new Column();
-		column.data = (String)args.get( "data" );
+		column.path = (String)args.get( "path" );
 		column.header = (String)args.get( "header" );
 		Boolean edit = (Boolean)args.get( "edit" );
 		column.edit = edit != null ? edit : false;

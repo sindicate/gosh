@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 import com.logicacmg.idt.commons.util.Assert;
 import commonj.sdo.DataObject;
@@ -18,19 +17,20 @@ public class Table extends Composite
 
 	static public class Column
 	{
-		protected String data;
+		protected String path;
 		protected String header;
 		protected boolean edit;
 	}
 
 	protected List< Column > columns;
-	protected List< DataObject > data;
+	protected DataObject data;
+	protected String path;
 	
-	public Table( String name, Composite parent, List<DataObject> data, Map args )
+	public Table( String name, Composite parent, DataObject data, String path, Map args )
 	{
 		super( name, parent );
 		this.columns = new ArrayList();
-		setData( data );
+		setData( data, path );
 	}
 	
 	@Override
@@ -53,37 +53,41 @@ public class Table extends Composite
 			out.print( '>' );
 		}
 		else
-			out.print( "<table class=\"table\">" );
-		out.print( "<tr class=\"row\">" );
+			out.print( "<table class=\"table\">\n" );
+		out.print( "	<tr class=\"row\">" );
 		for( Column column : this.columns )
 		{
 			out.print( "<th>" );
 			out.print( column.header );
 			out.print( "</th>" );
 		}
-		out.print( "</tr>" );
-		for( DataObject data : this.data )
+		out.print( "</tr>\n" );
+		List<DataObject> data = this.data.getList( this.path );
+		String path = this.name + "." + this.path;
+		int i = 1;
+		for( DataObject row : data )
 		{
-			out.print( "<tr class=\"row\">" );
+			String path2 = path + "[" + i++ + "]/";
+			out.print( "	<tr class=\"row\">\n" );
 			for( Column column : this.columns )
 			{
-				out.print( "<td>" );
+				out.print( "		<td>" );
 				if( column.edit )
 				{
 					out.print( "<input name=\"" );
-					out.print( this.name );
-					out.print( '.' );
-					out.print( column.data );
+					out.print( path2 );
+					out.print( column.path );
 					out.print( "\" value=\"" );
-					out.print( data.getString( column.data ) );
+					out.print( row.getString( column.path ) );
 					out.print( "\"/>" );
 				}
 				else
-					out.print( data.getString( column.data ) );
-				out.print( "</td>" );
+					out.print( row.getString( column.path ) );
+				out.print( "</td>\n" );
 			}
+			out.print( "	</tr>\n" );
 		}
-		out.println( "</table>" );
+		out.println( "</table>\n" );
 	}
 
 	public void addColumn( Column column )
@@ -91,9 +95,12 @@ public class Table extends Composite
 		this.columns.add( column );
 	}
 	
-	public void setData( List< DataObject > data )
+	public void setData( DataObject data, String path )
 	{
+		Assert.notNull( data );
+		Assert.notNull( path );
 		this.data = data;
+		this.path = path;
 	}
 	
 	public void update()
@@ -105,7 +112,6 @@ public class Table extends Composite
 	public void setValue( String name, String value )
 	{
 		log.debug( "set [" + this.getClass() + "][" + name + "] <- [" + value + "]" );
-		Assert.isTrue( name.indexOf( '.' ) < 0 );
-		InvokerHelper.setProperty( this, name, value );
+		this.data.set( name, value );
 	}
 }
