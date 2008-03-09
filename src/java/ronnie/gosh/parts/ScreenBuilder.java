@@ -74,7 +74,8 @@ public class ScreenBuilder implements GroovyObject
 		String name = (String)args.remove( "name" );
 		DataObject data = (DataObject)args.remove( "data" );
 		String path = (String)args.remove( "path" );
-		Table table = new Table( name, this.current, data, path, args );
+		Closure update = (Closure)args.remove( "update" );
+		Table table = new Table( name, this.current, data, path, update, args );
 		
 		Composite old = this.current;
 		this.current = table;

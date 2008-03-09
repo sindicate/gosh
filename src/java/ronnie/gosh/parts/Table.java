@@ -1,5 +1,7 @@
 package ronnie.gosh.parts;
 
+import groovy.lang.Closure;
+
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,12 +27,14 @@ public class Table extends Composite
 	protected List< Column > columns;
 	protected DataObject data;
 	protected String path;
+	protected Closure update;
 	
-	public Table( String name, Composite parent, DataObject data, String path, Map args )
+	public Table( String name, Composite parent, DataObject data, String path, Closure update, Map args )
 	{
 		super( name, parent );
 		this.columns = new ArrayList();
 		setData( data, path );
+		this.update = update;
 	}
 	
 	@Override
@@ -105,7 +109,7 @@ public class Table extends Composite
 	
 	public void update()
 	{
-		log.debug( "updating" );
+		this.update.call( new Object[] { this.data } );
 	}
 	
 	@Override
