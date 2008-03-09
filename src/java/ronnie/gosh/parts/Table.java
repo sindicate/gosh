@@ -6,10 +6,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.log4j.Logger;
+import org.codehaus.groovy.runtime.InvokerHelper;
+
+import com.logicacmg.idt.commons.util.Assert;
 import commonj.sdo.DataObject;
 
-public class Table extends Component
+public class Table extends Composite
 {
+	static private final Logger log = Logger.getLogger( Table.class );
+
 	static public class Column
 	{
 		protected String data;
@@ -20,17 +26,18 @@ public class Table extends Component
 	protected List< Column > columns;
 	protected List< DataObject > data;
 	
-	public Table( Composite parent, List<DataObject> data, Map args )
+	public Table( String name, Composite parent, List<DataObject> data, Map args )
 	{
-		super( parent );
+		super( name, parent );
 		this.columns = new ArrayList();
-		
 		setData( data );
 	}
 	
 	@Override
 	public void render()
 	{
+		// TODO Get the complete path instead of only the name
+		
 		PrintWriter out = getOut();
 		if( this.attributes.size() > 0 )
 		{
@@ -64,6 +71,8 @@ public class Table extends Component
 				if( column.edit )
 				{
 					out.print( "<input name=\"" );
+					out.print( this.name );
+					out.print( '.' );
 					out.print( column.data );
 					out.print( "\" value=\"" );
 					out.print( data.getString( column.data ) );
@@ -85,5 +94,18 @@ public class Table extends Component
 	public void setData( List< DataObject > data )
 	{
 		this.data = data;
+	}
+	
+	public void update()
+	{
+		log.debug( "updating" );
+	}
+	
+	@Override
+	public void setValue( String name, String value )
+	{
+		log.debug( "set [" + this.getClass() + "][" + name + "] <- [" + value + "]" );
+		Assert.isTrue( name.indexOf( '.' ) < 0 );
+		InvokerHelper.setProperty( this, name, value );
 	}
 }

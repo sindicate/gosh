@@ -386,6 +386,16 @@ public class RequestContext
 	{
 		return this.controllerName;
 	}
+
+	public HttpServletRequest getRequest()
+	{
+		return this.request;
+	}
+
+	public HttpServletResponse getResponse()
+	{
+		return this.response;
+	}
 	
 //	public StateManager getState()
 //	{

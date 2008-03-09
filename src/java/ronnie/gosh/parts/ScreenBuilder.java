@@ -15,8 +15,10 @@ import com.logicacmg.idt.commons.NotImplementedException;
 
 public class ScreenBuilder implements GroovyObject
 {
+//	static private final Logger log = Logger.getLogger( ScreenBuilder.class );
+	
 	protected ScreenSupport screen;
-	protected Component current;
+	protected Composite current;
 	
 	public ScreenBuilder( ScreenSupport screen )
 	{
@@ -49,28 +51,37 @@ public class ScreenBuilder implements GroovyObject
 	
 	protected Form form( Map args )
 	{
-		Form form = new Form( (Composite)this.current, args );
+		String name = null;
+		if( args != null )
+		{
+			name = (String)args.remove( "name" );
+		}
+		Form form = new Form( name, this.current, args );
 		return form;
 	}
 
 	protected Button button( Map args )
 	{
+		String name = (String)args.remove( "name" );
 		String type = (String)args.remove( "type" );
 		Closure clicked = (Closure)args.remove( "clicked" );
-		return new Button( (Composite)this.current, type, clicked, args );
+		return new Button( name, this.current, type, clicked, args );
 	}
 
 	// TODO Rename to datatable or something like that
 	protected Table table( Map args, Closure closure )
 	{
+		String name = (String)args.remove( "name" );
 		List data = (List)args.remove( "data" );
-		Table table = new Table( (Composite)this.current, data, args );
+		Table table = new Table( name, this.current, data, args );
+		
+		Composite old = this.current;
 		this.current = table;
 		
 		closure.setDelegate( this );
 		closure.call();
 		
-		this.current = table.parent;
+		this.current = old;
 
 		// TODO Check that columns have been added
 		return table;
@@ -101,8 +112,12 @@ public class ScreenBuilder implements GroovyObject
 	}
 
 	@Override
-	public void setProperty( String name, Object arg1 )
+	public void setProperty( String name, Object value )
 	{
-		throw new NotImplementedException();
+//		log.debug( "setting property [" + ( this.current != null ? this.current.getClass() : "null" ) + "][" + name + "] <- [" + ( value != null ? value.getClass() : "null" ) + "]" );
+		this.current.childs.put( name, (Component)value );
+		( (Component)value ).name = name;
+//		InvokerHelper.setProperty( this.current.c, name, value );
+//		throw new NotImplementedException();
 	}
 }

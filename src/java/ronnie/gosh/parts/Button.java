@@ -10,9 +10,9 @@ public class Button extends Component
 	protected String type;
 	protected Closure clicked;
 	
-	public Button( Composite parent, String type, Closure clicked, Map args )
+	public Button( String name, Composite parent, String type, Closure clicked, Map args )
 	{
-		super( parent );
+		super( name, parent );
 		this.type = type;
 		this.clicked = clicked;
 	}
@@ -21,6 +21,11 @@ public class Button extends Component
 	public void render()
 	{
 		PrintWriter out = getOut();
-		out.print( "<input type=\"submit\" name=\"action(update)\" value=\"Update\"/>" );
+		out.print( "<input type=\"submit\" name=\"action(" + this.name + ".click())\" value=\"Update\"/>" );
+	}
+	
+	public void click()
+	{
+		this.clicked.call();
 	}
 }

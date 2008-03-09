@@ -8,9 +8,9 @@ import java.util.Map;
 
 public class Form extends Composite
 {
-	public Form( Composite parent, Map args )
+	public Form( String name, Composite parent, Map args )
 	{
-		super( parent );
+		super( name, parent );
 	}
 	
 	@Override
