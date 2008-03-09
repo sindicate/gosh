@@ -119,9 +119,9 @@ public class ApplicationContext implements BeanFactoryAware
 		call( resolved.controllerName, resolved.actionName, request, response, args );
 	}
 
-	protected String resolveActionName( HttpServletRequest request, String urlActionName )
+	protected String resolveActionName( HttpServletRequest request, String actionNameInUrl )
 	{
-		return urlActionName;
+		return actionNameInUrl;
 	}
 	
 	static final private Pattern pathInfoPattern1 = Pattern.compile( "/([^\\/]+)/?([^\\/]+)?/?(.+)?" );

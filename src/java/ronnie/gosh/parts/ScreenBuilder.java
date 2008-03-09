@@ -4,6 +4,7 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 
+import java.util.List;
 import java.util.Map;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -41,38 +42,29 @@ public class ScreenBuilder implements GroovyObject
 		throw new NotImplementedException();
 	}
 	
-	protected Form form( Closure closure )
+	protected Form form()
 	{
-		return form( null, closure );
+		return form( null );
 	}
 	
-	protected Form form( Map args, Closure closure )
+	protected Form form( Map args )
 	{
 		Form form = new Form( (Composite)this.current, args );
-		this.current = form;
-		
-		closure.setDelegate( this );
-		closure.call();
-		
-		this.current = form.parent;
-
 		return form;
 	}
 
-	protected Submit submit()
+	protected Button button( Map args )
 	{
-		return submit( null );
-	}
-	
-	protected Submit submit( Map args )
-	{
-		return new Submit( (Composite)this.current, args );
+		String type = (String)args.remove( "type" );
+		Closure clicked = (Closure)args.remove( "clicked" );
+		return new Button( (Composite)this.current, type, clicked, args );
 	}
 
 	// TODO Rename to datatable or something like that
 	protected Table table( Map args, Closure closure )
 	{
-		Table table = new Table( (Composite)this.current, args );
+		List data = (List)args.remove( "data" );
+		Table table = new Table( (Composite)this.current, data, args );
 		this.current = table;
 		
 		closure.setDelegate( this );

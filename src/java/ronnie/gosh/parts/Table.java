@@ -20,16 +20,12 @@ public class Table extends Component
 	protected List< Column > columns;
 	protected List< DataObject > data;
 	
-	public Table( Composite parent, Map args )
+	public Table( Composite parent, List<DataObject> data, Map args )
 	{
 		super( parent );
 		this.columns = new ArrayList();
 		
-		if( args != null )
-		{
-			setClass( (String)args.get( "class" ) );
-			setData( (List)args.get( "data" ) );
-		}
+		setData( data );
 	}
 	
 	@Override
@@ -50,8 +46,8 @@ public class Table extends Component
 			out.print( '>' );
 		}
 		else
-			out.print( "<table>" );
-		out.print( "<tr>" );
+			out.print( "<table class=\"table\">" );
+		out.print( "<tr class=\"row\">" );
 		for( Column column : this.columns )
 		{
 			out.print( "<th>" );
@@ -61,7 +57,7 @@ public class Table extends Component
 		out.print( "</tr>" );
 		for( DataObject data : this.data )
 		{
-			out.print( "<tr>" );
+			out.print( "<tr class=\"row\">" );
 			for( Column column : this.columns )
 			{
 				out.print( "<td>" );
