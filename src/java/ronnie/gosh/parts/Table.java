@@ -62,9 +62,10 @@ public class Table extends Composite
 		for( Column column : this.columns )
 		{
 			out.print( "<th>" );
-			out.print( column.header );
+			print( out, column.header );
 			out.print( "</th>" );
 		}
+		out.print( "<th/>" );
 		out.print( "</tr>\n" );
 		List<DataObject> data = this.data.getList( this.path );
 		String path = this.name + "." + this.path;
@@ -82,16 +83,23 @@ public class Table extends Composite
 					out.print( path2 );
 					out.print( column.path );
 					out.print( "\" value=\"" );
-					out.print( row.getString( column.path ) );
+					print( out, row.getString( column.path ) );
 					out.print( "\"/>" );
 				}
 				else
-					out.print( row.getString( column.path ) );
+					print( out, row.getString( column.path ) );
 				out.print( "</td>\n" );
 			}
+			out.print( "		<td><a href=\"\">remove</a></td>" );
 			out.print( "	</tr>\n" );
 		}
 		out.println( "</table>\n" );
+	}
+
+	protected void print( PrintWriter out, String s )
+	{
+		if( s != null )
+			out.print( s );
 	}
 
 	public void addColumn( Column column )
@@ -117,5 +125,10 @@ public class Table extends Composite
 	{
 		log.debug( "set [" + this.getClass() + "][" + name + "] <- [" + value + "]" );
 		this.data.set( name, value );
+	}
+	
+	public DataObject addRow()
+	{
+		return this.data.createDataObject( this.path );
 	}
 }

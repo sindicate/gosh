@@ -2,8 +2,9 @@ package ronnie.gosh.parts;
 
 import groovy.lang.Closure;
 
-import java.io.PrintWriter;
 import java.util.Map;
+
+import ronnie.gosh.RequestContext;
 
 public class Button extends Component
 {
@@ -20,8 +21,9 @@ public class Button extends Component
 	@Override
 	public void render()
 	{
-		PrintWriter out = getOut();
-		out.print( "<input type=\"submit\" name=\"action(" + this.name + ".click())\" value=\"Update\"/>" );
+		RequestContext context = getRequestContext();
+		String display = context.message( "button." + this.type ); 
+		context.getOut().print( "<input type=\"submit\" name=\"action(" + this.name + ".click())\" value=\"" + display + "\"/>" );
 	}
 	
 	public void click()

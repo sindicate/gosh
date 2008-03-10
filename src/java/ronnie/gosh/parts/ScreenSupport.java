@@ -4,11 +4,15 @@ import groovy.lang.Closure;
 
 import java.util.Enumeration;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import ronnie.gosh.RequestContext;
 
 import com.logicacmg.idt.commons.util.Assert;
+import com.logicacmg.idt.commons.util.StringUtil;
 
 
 // TODO Need part builder
@@ -32,11 +36,12 @@ public abstract class ScreenSupport extends Composite implements Screen
 	public void call( RequestContext context )
 	{
 		this.context = context;
+		HttpServletRequest request = context.getRequest();
 		
 		String action = null;
 		
 		// Analyze the parameters
-		Enumeration< String > i = context.getRequest().getParameterNames();
+		Enumeration< String > i = request.getParameterNames();
 		while( i.hasMoreElements() )
 		{
 			String name = i.nextElement();
@@ -51,7 +56,8 @@ public abstract class ScreenSupport extends Composite implements Screen
 				String child = name.substring( 0, pos );
 				String prop = name.substring( pos + 1 );
 				Component component = this.childs.get( child );
-				component.setValue( prop, context.getRequest().getParameter( name ) );
+				String value = request.getParameter( name );
+				component.setValue( prop, StringUtil.emptyToNull( value ) );
 			}
 		}
 		
@@ -72,6 +78,13 @@ public abstract class ScreenSupport extends Composite implements Screen
 	@Override
 	public void render()
 	{
+		HttpServletResponse response = this.context.getResponse();
+		
+		// no-store is the one that prevents back-button caching, no-cache has nothing to do with it.
+		// BUT!!!, IE6 does not work correctly with no-store, so we add no-cache for IE6 only.
+		response.setHeader( "Cache-Control", "no-store" ); // no-store prevents back-button caching in both IE7 and Firefox
+		response.setHeader( "Cache-Control", "no-cache" ); // Needed for IE6
+
 		Closure closure = (Closure)InvokerHelper.getProperty( this, "render" );
 		if( closure != null )
 		{
