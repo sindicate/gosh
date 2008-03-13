@@ -2,6 +2,7 @@ package ronnie.gosh.parts;
 
 import ronnie.gosh.RequestContext;
 
+// Need message priorities
 public class Message extends Component
 {
 	protected String message;
@@ -12,15 +13,25 @@ public class Message extends Component
 	}
 
 	@Override
-	public void render()
+	public void render( RequestContext context )
 	{
-		RequestContext context = getRequestContext();
-		context.getOut().print( this.message );
+		if( this.message != null )
+			context.getOut().print( this.message );
+	}
+	
+	public void setMessage( String message )
+	{
+		this.message = message;
+	}
+	
+	public void clear()
+	{
+		this.message = null;
 	}
 
 	@Override
 	public String getText()
 	{
-		return this.message;
+		return this.message != null ? this.message : "";
 	}
 }

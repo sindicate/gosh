@@ -24,6 +24,8 @@ import org.apache.taglibs.standard.functions.Functions;
 import org.apache.taglibs.standard.tag.common.core.ImportSupport;
 import org.apache.taglibs.standard.tag.common.core.UrlSupport;
 
+import ronnie.gosh.parts.Component;
+
 import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.util.Assert;
 
@@ -410,6 +412,16 @@ public class RequestContext
 //	{
 //		return new StateManager( getSession() );
 //	}
+	
+	public void render( Component component )
+	{
+		component.render( this );
+	}
+
+	public void render( Component component, Closure closure )
+	{
+		component.render( this, closure );
+	}
 }
 
 class FlashKey

@@ -22,7 +22,7 @@ public abstract class ScreenSupport extends Composite implements Screen
 	static private Logger log = Logger.getLogger( ScreenSupport.class );
 	
 	protected RequestContext context;
-	protected boolean rendered;
+//	protected boolean rendered;
 	
 	public ScreenSupport()
 	{
@@ -37,6 +37,7 @@ public abstract class ScreenSupport extends Composite implements Screen
 	abstract public void build();
 
 	// TODO This can be non-public?
+	// TODO Use the referer to detect if a refresh is needed?
 	public void call( RequestContext context )
 	{
 		this.context = context;
@@ -96,18 +97,16 @@ public abstract class ScreenSupport extends Composite implements Screen
 		if( "POST".equals( context.getRequest().getMethod() ) )
 			context.redirect( null );
 		
-		render();
+		render( context );
 	}
 	
 	protected void requestApplied()
 	{
-		Closure closure = (Closure)InvokerHelper.getProperty( this, "requestApplied" );
-		if( closure != null )
-			closure.call();
+		// to be implemented by subclasses
 	}
 
 	@Override
-	public void render()
+	public void render( RequestContext context )
 	{
 		HttpServletResponse response = this.context.getResponse();
 		
@@ -119,7 +118,7 @@ public abstract class ScreenSupport extends Composite implements Screen
 		Closure closure = (Closure)InvokerHelper.getProperty( this, "render" );
 		if( closure != null )
 		{
-			closure.setDelegate( this.context );
+			closure.setDelegate( context );
 			closure.call();
 		}
 	}

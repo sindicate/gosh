@@ -6,11 +6,11 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 
-import com.logicacmg.idt.commons.util.Assert;
+import ronnie.gosh.RequestContext;
+
 import commonj.sdo.DataObject;
 
 public class Table extends Composite
@@ -28,40 +28,45 @@ public class Table extends Composite
 	protected List< Column > columns;
 	protected DataObject data;
 	protected String path;
+	protected Closure retrieve;
 	protected Closure update;
 	protected Button remove;
+	protected Message status;
 	
-	public Table( String name, Composite parent, DataObject data, String path, Closure update, Map args )
+	public Table( String name, Composite parent, DataObject data, String path, Closure retrieve, Closure update, Map args, Message status )
 	{
 		super( name, parent );
-		this.columns = new ArrayList();
-		setData( data, path );
-		this.update = update;
-		this.remove = new RemoveButton();
 		
+		this.columns = new ArrayList();
+		this.data = data;
+		this.path = path;
+		this.update = update;
+		this.retrieve = retrieve;
+		this.remove = new RemoveButton();
+		this.status = status;
 	}
 	
 	@Override
-	public void render()
+	public void render( RequestContext context )
 	{
 		// TODO Get the complete path instead of only the name
 		
-		PrintWriter out = getOut();
-		if( this.attributes.size() > 0 )
-		{
-			out.print( "<table" );
-			for( Entry< String, String > attribute : this.attributes.entrySet() )
-			{
-				out.print( ' ' );
-				out.print( attribute.getKey() );
-				out.print( "=\"" );
-				out.print( attribute.getValue() );
-				out.print( '"' );
-			}
-			out.print( '>' );
-		}
-		else
-			out.print( "<table class=\"table\">\n" );
+		PrintWriter out = context.getOut();
+//		if( this.attributes.size() > 0 )
+//		{
+//			out.print( "<table" );
+//			for( Entry< String, String > attribute : this.attributes.entrySet() )
+//			{
+//				out.print( ' ' );
+//				out.print( attribute.getKey() );
+//				out.print( "=\"" );
+//				out.print( attribute.getValue() );
+//				out.print( '"' );
+//			}
+//			out.print( '>' );
+//		}
+//		else
+		out.print( "<table class=\"table\">\n" );
 		out.print( "	<tr class=\"row\">" );
 		for( Column column : this.columns )
 		{
@@ -95,13 +100,16 @@ public class Table extends Composite
 				out.print( "</td>\n" );
 			}
 			out.print( "		<td>" );
-			this.remove.render( Integer.toString( i ) );
+			this.remove.render( context, Integer.toString( i ) );
 			out.print( "</td>" );
 			out.print( "	</tr>\n" );
 			
 			i++;
 		}
 		out.println( "</table>\n" );
+		
+		if( this.status != null )
+			this.status.clear();
 	}
 
 	protected void print( PrintWriter out, String s )
@@ -115,25 +123,34 @@ public class Table extends Composite
 		this.columns.add( column );
 	}
 	
-	public void setData( DataObject data, String path )
-	{
-		Assert.notNull( data );
-		Assert.notNull( path );
-		this.data = data;
-		this.path = path;
-	}
-	
 	public void update()
 	{
 		this.update.call( new Object[] { this.data } );
+		retrieve();
+		if( this.status != null )
+			this.status.setMessage( "rows updated" );
+	}
+	
+	public void retrieve()
+	{
+		this.data = (DataObject)this.retrieve.call();
+		if( this.status != null )
+			this.status.setMessage( getRowCount() + " rows retrieved" );
 	}
 	
 	@Override
-	public void setValue( String name, String value )
+	public void setValue( String path, String value )
 	{
 		// TODO Check that only editable things are being set
-		log.debug( "set [" + this.getClass() + "][" + name + "] <- [" + value + "]" );
-		this.data.set( name, value );
+		log.debug( "set [" + this.getClass() + "][" + path + "] <- [" + value + "]" );
+		Object old = this.data.get( path );
+		if( value == null )
+		{
+			if( old != null )
+				this.data.set( path, value );
+		}
+		else if( !value.equals( old ) )
+			this.data.set( path, value );
 	}
 	
 	public DataObject addRow()
@@ -163,9 +180,9 @@ public class Table extends Composite
 		}
 
 		@Override
-		public void render()
+		public void render( RequestContext context )
 		{
-			super.render();
+			super.render( context );
 		}
 	}
 }

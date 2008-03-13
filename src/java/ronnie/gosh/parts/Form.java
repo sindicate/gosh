@@ -6,6 +6,8 @@ import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.Map;
 
+import ronnie.gosh.RequestContext;
+
 public class Form extends Composite
 {
 	public Form( String name, Composite parent, Map args )
@@ -14,15 +16,10 @@ public class Form extends Composite
 	}
 	
 	@Override
-	public void render()
+	public void render( RequestContext context, Closure closure )
 	{
-		throw new UnsupportedOperationException();
-	}
-	
-	public void render( Closure closure )
-	{
-		PrintWriter out = getOut();
-		String link = getRequestContext().link( Collections.EMPTY_MAP );
+		PrintWriter out = context.getOut();
+		String link = context.link( Collections.EMPTY_MAP );
 		out.print( "<form method=\"post\" action=\"" );
 		out.print( link );
 		out.print( "\">\n" );

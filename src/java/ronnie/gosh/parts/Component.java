@@ -1,8 +1,6 @@
 package ronnie.gosh.parts;
 
-import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.Map;
+import groovy.lang.Closure;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -15,7 +13,7 @@ public abstract class Component
 //	static private final Logger log = Logger.getLogger( Component.class );
 
 	protected String name;
-	protected Map<String, String> attributes = new HashMap();
+//	protected Map<String, String> attributes = new HashMap();
 	protected Composite parent;
 	
 	public Component( String name, Composite parent )
@@ -24,16 +22,18 @@ public abstract class Component
 		if( parent != null )
 		{
 			this.parent = parent;
-			// TODO Assert that name is unique
 			if( name != null )
+			{
+				Assert.isFalse( parent.childs.containsKey( name ) );
 				parent.childs.put( name, this );
+			}
 		}
 	}
 	
-	public PrintWriter getOut()
-	{
-		return getRequestContext().getOut();
-	}
+//	public PrintWriter getOut()
+//	{
+//		return getRequestContext().getOut();
+//	}
 	
 	public RequestContext getRequestContext()
 	{
@@ -41,10 +41,10 @@ public abstract class Component
 		return this.parent.getRequestContext();
 	}
 
-	public void setClass( String name )
-	{
-		this.attributes.put( "class", name );
-	}
+//	public void setClass( String name )
+//	{
+//		this.attributes.put( "class", name );
+//	}
 	
 	public void call( String action )
 	{
@@ -85,7 +85,12 @@ public abstract class Component
 		throw new UnsupportedOperationException();
 	}
 	
-	public void render()
+	public void render( RequestContext context )
+	{
+		throw new UnsupportedOperationException();
+	}
+
+	public void render( RequestContext context, Closure closure )
 	{
 		throw new UnsupportedOperationException();
 	}

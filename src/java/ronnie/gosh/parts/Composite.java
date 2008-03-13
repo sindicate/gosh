@@ -5,6 +5,8 @@ import groovy.lang.MissingPropertyException;
 import java.util.HashMap;
 import java.util.Map;
 
+import ronnie.gosh.RequestContext;
+
 import com.logicacmg.idt.commons.util.Assert;
 
 public abstract class Composite extends Component
@@ -33,19 +35,13 @@ public abstract class Composite extends Component
 		component.call( action );
 	}
 
-	@Override
-	public void render()
-	{
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void renderChilds()
+	public void renderChilds( RequestContext context )
 	{
 		for( Component child : this.childs.values() )
-			child.render();
+			child.render( context );
 	}
-	
+
+	// TODO Is this the way to go?
 	public Object propertyMissing( String name )
 	{
 		if( this.childs.containsKey( name ) )
