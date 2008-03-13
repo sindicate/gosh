@@ -23,7 +23,17 @@ public class Button extends Component
 	{
 		RequestContext context = getRequestContext();
 		String display = context.message( "button." + this.type ); 
-		context.getOut().print( "<input type=\"submit\" name=\"action(" + this.name + ".click())\" value=\"" + display + "\"/>" );
+		context.getOut().print( "<input type=\"submit\" name=\"action(" + getPath() + ".click())\" value=\"" + display + "\"/>" );
+	}
+	
+	// TODO Add context as parameter
+	public void render( String arg )
+	{
+		if( arg == null )
+			arg = "";
+		RequestContext context = getRequestContext();
+		String display = context.message( "button." + this.type ); 
+		context.getOut().print( "<input type=\"submit\" name=\"action(" + getPath() + ".click(" + arg + "))\" value=\"" + display + "\"/>" );
 	}
 	
 	public void click()

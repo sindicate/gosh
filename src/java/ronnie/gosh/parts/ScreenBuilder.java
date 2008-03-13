@@ -60,6 +60,11 @@ public class ScreenBuilder implements GroovyObject
 		return form;
 	}
 
+	protected Message message()
+	{
+		return new Message( null, this.current );
+	}
+
 	protected Button button( Map args )
 	{
 		String name = (String)args.remove( "name" );
@@ -96,6 +101,8 @@ public class ScreenBuilder implements GroovyObject
 		column.header = (String)args.get( "header" );
 		Boolean edit = (Boolean)args.get( "edit" );
 		column.edit = edit != null ? edit : false;
+		Boolean key = (Boolean)args.get( "key" );
+		column.key = key != null ? key : false;
 
 		Table table = (Table)this.current;
 		table.addColumn( column );

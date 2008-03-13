@@ -30,8 +30,6 @@ public abstract class Component
 		}
 	}
 	
-	abstract public void render();
-	
 	public PrintWriter getOut()
 	{
 		return getRequestContext().getOut();
@@ -51,12 +49,43 @@ public abstract class Component
 	public void call( String action )
 	{
 		Assert.isTrue( action.indexOf( '.' ) < 0 );
-		Assert.isTrue( action.endsWith( "()" ) );
-		action = action.substring( 0, action.length() - 2 );
-		InvokerHelper.invokeMethod( this, action, null );
+		int pos = action.indexOf( '(' );
+		Assert.isTrue( pos > 0 );
+		Assert.isTrue( action.endsWith( ")" ) );
+		if( pos < action.length() - 2 )
+		{
+			String arg = action.substring( pos + 1, action.length() - 1 );
+			action = action.substring( 0, pos );
+			InvokerHelper.invokeMethod( this, action, arg );
+		}
+		else
+		{
+			action = action.substring( 0, action.length() - 2 );
+			InvokerHelper.invokeMethod( this, action, null );
+		}
 	}
 	
 	public void setValue( String name, String value )
+	{
+		throw new UnsupportedOperationException();
+	}
+	
+	public String getPath()
+	{
+		Assert.notNull( this.parent );
+		Assert.notNull( this.name );
+		String path = this.parent.getPath();
+		if( path != null )
+			return path + "." + this.name;
+		return this.name;
+	}
+
+	public String getText()
+	{
+		throw new UnsupportedOperationException();
+	}
+	
+	public void render()
 	{
 		throw new UnsupportedOperationException();
 	}

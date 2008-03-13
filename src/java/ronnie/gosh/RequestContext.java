@@ -1,5 +1,9 @@
 package ronnie.gosh;
 
+import groovy.lang.Closure;
+import groovy.lang.GString;
+import groovy.xml.MarkupBuilder;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -19,10 +23,6 @@ import org.apache.log4j.Logger;
 import org.apache.taglibs.standard.functions.Functions;
 import org.apache.taglibs.standard.tag.common.core.ImportSupport;
 import org.apache.taglibs.standard.tag.common.core.UrlSupport;
-
-import groovy.lang.Closure;
-import groovy.lang.GString;
-import groovy.xml.MarkupBuilder;
 
 import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.util.Assert;
@@ -53,11 +53,12 @@ public class RequestContext
 	protected RequestParameters params;
 	protected Map args;
 	protected String controllerName;
+	protected String actionName;
 	
 	protected Map fragmentsCollector;
 
 	// Initial	
-	public RequestContext configure( HttpServletRequest request, HttpServletResponse response, ApplicationContext applicationContext, String controllerName, Map args )
+	public RequestContext configure( HttpServletRequest request, HttpServletResponse response, ApplicationContext applicationContext, String controllerName, String actionName, Map args )
 	{
 		this.request = request;
 		this.response = response;
@@ -65,12 +66,13 @@ public class RequestContext
 		this.args = new OverridingMap( this.params, args );
 		this.applicationContext = applicationContext;
 		this.controllerName = controllerName;
+		this.actionName = actionName;
 		
 		return this;
 	}
 	
 	// Include
-	public RequestContext configure( RequestContext parent, String controllerName, Map args )
+	public RequestContext configure( RequestContext parent, String controllerName, String actionName, Map args )
 	{
 		this.request = parent.request;
 		this.response = parent.response;
@@ -78,6 +80,7 @@ public class RequestContext
 		this.args = new OverridingMap( parent.args, args );
 		this.applicationContext = parent.applicationContext;
 		this.controllerName = controllerName;
+		this.actionName = actionName;
 		
 		return this;
 	}
@@ -298,6 +301,7 @@ public class RequestContext
 		String url = link( args );
 		try
 		{
+			// TODO Make a relative redirect
 			this.response.sendRedirect( url );
 		}
 		catch( IOException e )
@@ -387,6 +391,11 @@ public class RequestContext
 		return this.controllerName;
 	}
 
+	public String getActionName()
+	{
+		return this.actionName;
+	}
+	
 	public HttpServletRequest getRequest()
 	{
 		return this.request;
@@ -396,7 +405,7 @@ public class RequestContext
 	{
 		return this.response;
 	}
-	
+
 //	public StateManager getState()
 //	{
 //		return new StateManager( getSession() );

@@ -49,7 +49,7 @@ public class ApplicationContext implements BeanFactoryAware
 	{
 		CompiledGroovyPage page = this.pageManager.getPage( path );
 		RequestContext context = (RequestContext)this.beanFactory.getBean( "requestContext" );
-		context.configure( requestContext, requestContext.controllerName, args ); // Inherit controllername to be used within the page
+		context.configure( requestContext, requestContext.controllerName, requestContext.actionName, args ); // Inherit controllername to be used within the page
 		page.call( context );
 	}
 	
@@ -58,7 +58,7 @@ public class ApplicationContext implements BeanFactoryAware
 		UnboundClosure action = getActionClosure( controllerName, actionName );
 		
 		RequestContext context = (RequestContext)this.beanFactory.getBean( "requestContext" );
-		context.configure( requestContext, controllerName, args );
+		context.configure( requestContext, controllerName, actionName, args );
 		action.call( context );
 	}
 
@@ -66,28 +66,30 @@ public class ApplicationContext implements BeanFactoryAware
 	{
 		CompiledGroovyPage page = this.pageManager.getPage( path );
 		RequestContext context = (RequestContext)this.beanFactory.getBean( "requestContext" );
-		context.configure( request, response, this, null, null );
+		context.configure( request, response, this, null, null, null );
 		page.call( context );
 	}
 	
 	public void call( String controllerName, String actionName, HttpServletRequest request, HttpServletResponse response, Map args )
 	{
 		RequestContext context = (RequestContext)this.beanFactory.getBean( "requestContext" );
-		context.configure( request, response, this, controllerName, args );
-		
-		Screen screen = (Screen)context.getSession().getAttribute( controllerName );
-		if( screen == null )
-		{
-			screen = getScreen( controllerName );
-			if( screen != null )
-			{
-				screen.init();
-				context.getSession().setAttribute( controllerName, screen );
-			}
-		}
+		context.configure( request, response, this, controllerName, actionName, args );
+
+		// Screen already present?
+		Screen screen = (Screen)context.getSession().getAttribute( "screen:" + controllerName );
 		if( screen != null )
 		{
 			screen.call( context );
+			return;
+		}
+		
+		// Is it a screen?
+		screen = getScreen( controllerName );
+		if( screen != null )
+		{
+			screen.init();
+			screen.call( context ); // Before setting the attribute, this prevents the screen itself from removing it again in case of the "open" action
+			context.getSession().setAttribute( "screen:" + controllerName, screen );
 			return;
 		}
 		

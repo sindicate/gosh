@@ -22,12 +22,14 @@ public class Table extends Composite
 		protected String path;
 		protected String header;
 		protected boolean edit;
+		protected boolean key;
 	}
 
 	protected List< Column > columns;
 	protected DataObject data;
 	protected String path;
 	protected Closure update;
+	protected Button remove;
 	
 	public Table( String name, Composite parent, DataObject data, String path, Closure update, Map args )
 	{
@@ -35,6 +37,8 @@ public class Table extends Composite
 		this.columns = new ArrayList();
 		setData( data, path );
 		this.update = update;
+		this.remove = new RemoveButton();
+		
 	}
 	
 	@Override
@@ -72,7 +76,7 @@ public class Table extends Composite
 		int i = 1;
 		for( DataObject row : data )
 		{
-			String path2 = path + "[" + i++ + "]/";
+			String path2 = path + "[" + i + "]/";
 			out.print( "	<tr class=\"row\">\n" );
 			for( Column column : this.columns )
 			{
@@ -90,8 +94,12 @@ public class Table extends Composite
 					print( out, row.getString( column.path ) );
 				out.print( "</td>\n" );
 			}
-			out.print( "		<td><a href=\"\">remove</a></td>" );
+			out.print( "		<td>" );
+			this.remove.render( Integer.toString( i ) );
+			out.print( "</td>" );
 			out.print( "	</tr>\n" );
+			
+			i++;
 		}
 		out.println( "</table>\n" );
 	}
@@ -123,6 +131,7 @@ public class Table extends Composite
 	@Override
 	public void setValue( String name, String value )
 	{
+		// TODO Check that only editable things are being set
 		log.debug( "set [" + this.getClass() + "][" + name + "] <- [" + value + "]" );
 		this.data.set( name, value );
 	}
@@ -130,5 +139,33 @@ public class Table extends Composite
 	public DataObject addRow()
 	{
 		return this.data.createDataObject( this.path );
+	}
+	
+	public int getRowCount()
+	{
+		return this.data.getList( this.path ).size();
+	}
+	
+	public class RemoveButton extends Button
+	{
+		private final Logger log = Logger.getLogger( RemoveButton.class );
+		
+		public RemoveButton()
+		{
+			super( "removeButton", Table.this, "remove", null, null );
+		}
+
+		public void click( String arg )
+		{
+			int rownum = Integer.parseInt( arg );
+			Table.this.data.getList( Table.this.path ).remove( rownum - 1 );
+			this.log.debug( "removed " + rownum );
+		}
+
+		@Override
+		public void render()
+		{
+			super.render();
+		}
 	}
 }

@@ -7,6 +7,7 @@ import java.util.Enumeration;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.log4j.Logger;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import ronnie.gosh.RequestContext;
@@ -18,7 +19,10 @@ import com.logicacmg.idt.commons.util.StringUtil;
 // TODO Need part builder
 public abstract class ScreenSupport extends Composite implements Screen
 {
+	static private Logger log = Logger.getLogger( ScreenSupport.class );
+	
 	protected RequestContext context;
+	protected boolean rendered;
 	
 	public ScreenSupport()
 	{
@@ -36,11 +40,24 @@ public abstract class ScreenSupport extends Composite implements Screen
 	public void call( RequestContext context )
 	{
 		this.context = context;
+
+		if( "open".equals( context.getActionName() ) )
+		{
+			close();
+			// TODO Create automated test or assertion to test the a new screen has not been set in the session yet
+			context.redirect( null );
+			return;
+		}
+		
 		HttpServletRequest request = context.getRequest();
 		
 		String action = null;
+
+		// TODO Can't execute an action when the screen has just been build?
 		
 		// Analyze the parameters
+		boolean flag = false;
+		
 		Enumeration< String > i = request.getParameterNames();
 		while( i.hasMoreElements() )
 		{
@@ -58,8 +75,12 @@ public abstract class ScreenSupport extends Composite implements Screen
 				Component component = this.childs.get( child );
 				String value = request.getParameter( name );
 				component.setValue( prop, StringUtil.emptyToNull( value ) );
+				flag = true;
 			}
 		}
+		
+		if( flag )
+			requestApplied();
 		
 		if( action != null )
 		{
@@ -72,9 +93,19 @@ public abstract class ScreenSupport extends Composite implements Screen
 			component.call( action );
 		}
 		
+		if( "POST".equals( context.getRequest().getMethod() ) )
+			context.redirect( null );
+		
 		render();
 	}
 	
+	protected void requestApplied()
+	{
+		Closure closure = (Closure)InvokerHelper.getProperty( this, "requestApplied" );
+		if( closure != null )
+			closure.call();
+	}
+
 	@Override
 	public void render()
 	{
@@ -82,8 +113,8 @@ public abstract class ScreenSupport extends Composite implements Screen
 		
 		// no-store is the one that prevents back-button caching, no-cache has nothing to do with it.
 		// BUT!!!, IE6 does not work correctly with no-store, so we add no-cache for IE6 only.
-		response.setHeader( "Cache-Control", "no-store" ); // no-store prevents back-button caching in both IE7 and Firefox
 		response.setHeader( "Cache-Control", "no-cache" ); // Needed for IE6
+		response.setHeader( "Cache-Control", "no-store" ); // no-store prevents back-button caching in both IE7 and Firefox
 
 		Closure closure = (Closure)InvokerHelper.getProperty( this, "render" );
 		if( closure != null )
@@ -95,12 +126,23 @@ public abstract class ScreenSupport extends Composite implements Screen
 	
 	public void close()
 	{
-		this.context.getSession().removeAttribute( this.context.getControllerName() );
+		Assert.notNull( this.context );
+		Assert.notNull( this.context.getSession() );
+		log.debug( "closed [" + this.context.getControllerName() + "]" );
+		// TODO Need to implement a screenmanager for this
+		this.context.getSession().removeAttribute( "screen:" + this.context.getControllerName() );
 	}
 	
 	@Override
 	public RequestContext getRequestContext()
 	{
 		return this.context;
+	}
+	
+	@Override
+	public String getPath()
+	{
+		Assert.isNull( this.parent );
+		return null;
 	}
 }
