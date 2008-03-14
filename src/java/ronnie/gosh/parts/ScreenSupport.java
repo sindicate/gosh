@@ -129,7 +129,7 @@ public abstract class ScreenSupport extends Composite implements Screen
 		Assert.notNull( this.context.getSession() );
 		log.debug( "closed [" + this.context.getControllerName() + "]" );
 		// TODO Need to implement a screenmanager for this
-		this.context.getSession().removeAttribute( "screen:" + this.context.getControllerName() );
+		this.context.clearScreen( this.context.getControllerName() );
 	}
 	
 	@Override

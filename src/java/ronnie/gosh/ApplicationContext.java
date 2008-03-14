@@ -76,7 +76,7 @@ public class ApplicationContext implements BeanFactoryAware
 		context.configure( request, response, this, controllerName, actionName, args );
 
 		// Screen already present?
-		Screen screen = (Screen)context.getSession().getAttribute( "screen:" + controllerName );
+		Screen screen = context.getScreen( controllerName );
 		if( screen != null )
 		{
 			screen.call( context );
@@ -89,7 +89,7 @@ public class ApplicationContext implements BeanFactoryAware
 		{
 			screen.init();
 			screen.call( context ); // Before setting the attribute, this prevents the screen itself from removing it again in case of the "open" action
-			context.getSession().setAttribute( "screen:" + controllerName, screen );
+			context.storeScreen( controllerName, screen );
 			return;
 		}
 		

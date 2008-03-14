@@ -41,7 +41,7 @@ public class ScreenBuilder implements GroovyObject
 	@Override
 	public Object getProperty( String name )
 	{
-		throw new NotImplementedException();
+		return getMetaClass().getProperty( this, name );
 	}
 	
 	protected Form form()
@@ -105,10 +105,21 @@ public class ScreenBuilder implements GroovyObject
 		column.edit = edit != null ? edit : false;
 		Boolean key = (Boolean)args.get( "key" );
 		column.key = key != null ? key : false;
+		Select select = (Select)args.get( "select" );
+		column.select = select;
 
 		Table table = (Table)this.current;
 		table.addColumn( column );
 		return column;
+	}
+	
+	protected Select select( Map args )
+	{
+		Select select = new Select();
+		select.key = (String)args.get( "key" );
+		select.display = (String)args.get( "display" );
+		select.retrieve = (Closure)args.get( "retrieve" );
+		return select;
 	}
 
     public Object invokeMethod( String name, Object args )

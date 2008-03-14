@@ -25,6 +25,8 @@ import org.apache.taglibs.standard.tag.common.core.ImportSupport;
 import org.apache.taglibs.standard.tag.common.core.UrlSupport;
 
 import ronnie.gosh.parts.Component;
+import ronnie.gosh.parts.Screen;
+import ronnie.gosh.parts.ScreenManager;
 
 import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.util.Assert;
@@ -421,6 +423,39 @@ public class RequestContext
 	public void render( Component component, Closure closure )
 	{
 		component.render( this, closure );
+	}
+	
+	public Screen getScreen( String name )
+	{
+		HttpSession session = this.request.getSession( false );
+		if( session == null )
+			return null;
+		
+		ScreenManager screenManager = (ScreenManager)session.getAttribute( "screenManager" );
+		if( screenManager == null )
+			return null;
+			
+		return screenManager.getScreen( name );
+	}
+
+	public void storeScreen( String name, Screen screen )
+	{
+		HttpSession session = this.request.getSession();
+		ScreenManager screenManager = (ScreenManager)session.getAttribute( "screenManager" );
+		if( screenManager == null )
+		{
+			screenManager = new ScreenManager();
+			session.setAttribute( "screenManager", screenManager );
+		}
+		screenManager.storeScreen( name, screen );
+	}
+
+	public void clearScreen( String name )
+	{
+		HttpSession session = this.request.getSession();
+		ScreenManager screenManager = (ScreenManager)session.getAttribute( "screenManager" );
+		if( screenManager != null )
+			screenManager.clearScreen( name );
 	}
 }
 

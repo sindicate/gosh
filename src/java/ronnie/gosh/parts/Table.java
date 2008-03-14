@@ -8,10 +8,15 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.apache.tuscany.sdo.util.DataObjectUtil;
+import org.apache.tuscany.sdo.util.DataObjectUtil.Accessor;
+import org.eclipse.emf.ecore.EObject;
 
 import ronnie.gosh.RequestContext;
 
 import commonj.sdo.DataObject;
+import commonj.sdo.Property;
+import commonj.sdo.Type;
 
 public class Table extends Composite
 {
@@ -23,6 +28,7 @@ public class Table extends Composite
 		protected String header;
 		protected boolean edit;
 		protected boolean key;
+		protected Select select;
 	}
 
 	protected List< Column > columns;
@@ -88,12 +94,37 @@ public class Table extends Composite
 				out.print( "		<td>" );
 				if( column.edit )
 				{
-					out.print( "<input name=\"" );
-					out.print( path2 );
-					out.print( column.path );
-					out.print( "\" value=\"" );
-					print( out, row.getString( column.path ) );
-					out.print( "\"/>" );
+					if( column.select != null )
+					{
+						List<DataObject> sdata = (List)column.select.retrieve.call();
+						out.print( "<select name=\"" );
+						out.print( path2 );
+						out.print( column.path );
+						out.print( "\">" );
+						out.print( "<option value=\"\">(select)</option>" );
+						for( DataObject object : sdata )
+						{
+							out.print( "<option value=\"" );
+							Object key = object.get( column.select.key ); 
+							out.print( key );
+							if( key.equals( row.get( column.path ) ) )
+								out.print( "\" selected=\"selected\">" );
+							else
+								out.print( "\">" );
+							out.print( object.get( column.select.display ) );
+							out.print( "</option>" );
+						}
+						out.print( "</select>" );
+					}
+					else
+					{
+						out.print( "<input name=\"" );
+						out.print( path2 );
+						out.print( column.path );
+						out.print( "\" value=\"" );
+						print( out, row.getString( column.path ) );
+						out.print( "\"/>" );
+					}
 				}
 				else
 					print( out, row.getString( column.path ) );
@@ -138,19 +169,46 @@ public class Table extends Composite
 			this.status.setMessage( getRowCount() + " rows retrieved" );
 	}
 	
-	@Override
-	public void setValue( String path, String value )
+	protected Integer toInteger( String value )
+	{
+		if( value == null )
+			return null;
+		return Integer.valueOf( value );
+	}
+	
+	protected void setValue0( String path, String value )
 	{
 		// TODO Check that only editable things are being set
 		log.debug( "set [" + this.getClass() + "][" + path + "] <- [" + value + "]" );
+		Accessor accessor = DataObjectUtil.Accessor.create( (EObject)this.data, path, value );
+		try
+		{
+			Property property = accessor.getProperty();
+			Type type = property.getType();
+			log.debug( "type: " + type );
+			// TODO Better type checking
+			if( type.getName().equals( "IntObject" ) )
+				accessor.set( toInteger( value ) );
+			else
+				accessor.set( value );
+		}
+		finally
+		{
+			accessor.recycle();
+		}
+	}
+	
+	@Override
+	public void setValue( String path, String value )
+	{
 		Object old = this.data.get( path );
 		if( value == null )
 		{
 			if( old != null )
-				this.data.set( path, value );
+				setValue0( path, value );
 		}
 		else if( !value.equals( old ) )
-			this.data.set( path, value );
+			setValue0( path, value );
 	}
 	
 	public DataObject addRow()
