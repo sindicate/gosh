@@ -104,9 +104,14 @@ public class RequestContext
 		return this.out;
 	}
 	
+	public HttpSession createSession()
+	{
+		return this.request.getSession( true ); 
+	}
+	
 	public HttpSession getSession()
 	{
-		return this.request.getSession(); 
+		return this.request.getSession( false ); 
 	}
 
 	// TODO Merge fragments and args?

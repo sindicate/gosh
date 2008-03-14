@@ -29,6 +29,7 @@ public class Table extends Composite
 		protected boolean edit;
 		protected boolean key;
 		protected Select select;
+		protected boolean mandatory;
 	}
 
 	protected List< Column > columns;
@@ -36,10 +37,14 @@ public class Table extends Composite
 	protected String path;
 	protected Closure retrieve;
 	protected Closure update;
-	protected Button remove;
+	protected Button removeButton;
+	protected Button addButton;
+	protected Button updateButton;
+	protected Button retrieveButton;
 	protected Message status;
+	protected Errors errors;
 	
-	public Table( String name, Composite parent, DataObject data, String path, Closure retrieve, Closure update, Map args, Message status )
+	public Table( String name, Composite parent, DataObject data, String path, Closure retrieve, Closure update, Map args, Message status, Errors errors )
 	{
 		super( name, parent );
 		
@@ -48,8 +53,12 @@ public class Table extends Composite
 		this.path = path;
 		this.update = update;
 		this.retrieve = retrieve;
-		this.remove = new RemoveButton();
+		this.removeButton = new RemoveButton();
+		this.addButton = new AddButton();
+		this.updateButton = new UpdateButton();
+		this.retrieveButton = new RetrieveButton();
 		this.status = status;
+		this.errors = errors;
 	}
 	
 	@Override
@@ -91,9 +100,9 @@ public class Table extends Composite
 			out.print( "	<tr class=\"row\">\n" );
 			for( Column column : this.columns )
 			{
-				out.print( "		<td>" );
 				if( column.edit )
 				{
+					out.print( "		<td class=\"edit\">" );
 					if( column.select != null )
 					{
 						List<DataObject> sdata = (List)column.select.retrieve.call();
@@ -127,16 +136,28 @@ public class Table extends Composite
 					}
 				}
 				else
+				{
+					out.print( "		<td>" );
 					print( out, row.getString( column.path ) );
+				}
 				out.print( "</td>\n" );
 			}
-			out.print( "		<td>" );
-			this.remove.render( context, Integer.toString( i ) );
-			out.print( "</td>" );
+			out.print( "		<td class=\"edit\">" );
+			this.removeButton.render( context, Integer.toString( i ) );
+			out.print( "</td>\n" );
 			out.print( "	</tr>\n" );
 			
 			i++;
 		}
+		out.print( "	<tr class=\"buttons\"><td colspan=\"" );
+		out.print( this.columns.size() + 1 );
+		out.print( "\">" );
+		this.addButton.render( context );
+		out.print( " " );
+		this.retrieveButton.render( context );
+		out.print( " " );
+		this.updateButton.render( context );
+		out.print( "</td></tr>\n" );
 		out.println( "</table>\n" );
 		
 		if( this.status != null )
@@ -156,6 +177,10 @@ public class Table extends Composite
 	
 	public void update()
 	{
+		this.errors.addMessage( "Sorry, it didn't work!" );
+		if( this.errors.hasErrors() )
+			return;
+		
 		this.update.call( new Object[] { this.data } );
 		retrieve();
 		if( this.status != null )
@@ -223,7 +248,7 @@ public class Table extends Composite
 	
 	public class RemoveButton extends Button
 	{
-		private final Logger log = Logger.getLogger( RemoveButton.class );
+//		private final Logger log = Logger.getLogger( RemoveButton.class );
 		
 		public RemoveButton()
 		{
@@ -234,13 +259,55 @@ public class Table extends Composite
 		{
 			int rownum = Integer.parseInt( arg );
 			Table.this.data.getList( Table.this.path ).remove( rownum - 1 );
-			this.log.debug( "removed " + rownum );
+//			this.log.debug( "removed " + rownum );
+		}
+	}
+	
+	public class AddButton extends Button
+	{
+//		private final Logger log = Logger.getLogger( RemoveButton.class );
+		
+		public AddButton()
+		{
+			super( "addButton", Table.this, "add", null, null );
 		}
 
 		@Override
-		public void render( RequestContext context )
+		public void click()
 		{
-			super.render( context );
+			Table.this.addRow();
+		}
+	}
+	
+	public class UpdateButton extends Button
+	{
+//		private final Logger log = Logger.getLogger( RemoveButton.class );
+		
+		public UpdateButton()
+		{
+			super( "updateButton", Table.this, "save", null, null );
+		}
+
+		@Override
+		public void click()
+		{
+			Table.this.update();
+		}
+	}
+	
+	public class RetrieveButton extends Button
+	{
+//		private final Logger log = Logger.getLogger( RemoveButton.class );
+		
+		public RetrieveButton()
+		{
+			super( "retrieveButton", Table.this, "refresh", null, null );
+		}
+
+		@Override
+		public void click()
+		{
+			Table.this.retrieve();
 		}
 	}
 }

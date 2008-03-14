@@ -65,6 +65,11 @@ public class ScreenBuilder implements GroovyObject
 		return new Message( null, this.current );
 	}
 
+	protected Errors errors()
+	{
+		return new Errors( null, this.current );
+	}
+
 	protected Button button( Map args )
 	{
 		String name = (String)args.remove( "name" );
@@ -82,7 +87,8 @@ public class ScreenBuilder implements GroovyObject
 		String path = (String)args.remove( "path" );
 		Closure update = (Closure)args.remove( "update" );
 		Message status = (Message)args.remove( "status" );
-		Table table = new Table( name, this.current, data, path, retrieve, update, args, status );
+		Errors errors = (Errors)args.remove( "errors" );
+		Table table = new Table( name, this.current, data, path, retrieve, update, args, status, errors );
 		
 		Composite old = this.current;
 		this.current = table;
@@ -107,6 +113,8 @@ public class ScreenBuilder implements GroovyObject
 		column.key = key != null ? key : false;
 		Select select = (Select)args.get( "select" );
 		column.select = select;
+		Boolean mandatory = (Boolean)args.get( "mandatory" );
+		column.mandatory = mandatory != null ? mandatory : false;
 
 		Table table = (Table)this.current;
 		table.addColumn( column );
