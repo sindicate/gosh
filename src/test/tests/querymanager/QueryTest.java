@@ -31,6 +31,36 @@ public class QueryTest
 	}
 
 	@Test
+	public void testList()
+	{
+		CompiledQuery compiledQuery = QueryCompiler.compile( "column in (${column})", "name", 0 );
+		
+		Query query = compiledQuery.params( ScriptBytecodeAdapter.createMap( new Object[] { "column", ScriptBytecodeAdapter.createList( new Object[] { 1, 2, 3 } ) } ) );
+		System.out.println( query );
+		String result = query.getPreparedSQL( Collections.EMPTY_MAP, new ArrayList() );
+		System.out.println( result );
+		assert result.equals( "column in (?,?,?)" );
+		
+		query = compiledQuery.params( ScriptBytecodeAdapter.createMap( new Object[] { "column", ScriptBytecodeAdapter.createList( new Object[] { "1", "2", "3" } ) } ) );
+		System.out.println( query );
+		result = query.getPreparedSQL( Collections.EMPTY_MAP, new ArrayList() );
+		System.out.println( result );
+		assert result.equals( "column in (?,?,?)" );
+		
+		query = compiledQuery.params( ScriptBytecodeAdapter.createMap( new Object[] { "column", new int[] { 1, 2, 3 } } ) );
+		System.out.println( query );
+		result = query.getPreparedSQL( Collections.EMPTY_MAP, new ArrayList() );
+		System.out.println( result );
+		assert result.equals( "column in (?,?,?)" );
+		
+		query = compiledQuery.params( ScriptBytecodeAdapter.createMap( new Object[] { "column", new String[] { "1", "2", "3" } } ) );
+		System.out.println( query );
+		result = query.getPreparedSQL( Collections.EMPTY_MAP, new ArrayList() );
+		System.out.println( result );
+		assert result.equals( "column in (?,?,?)" );
+	}
+
+	@Test
 	public void testSimpleLiteral()
 	{
 		CompiledQuery compiledQuery = QueryCompiler.compile( "column = <%=column%>", "name", 0 );

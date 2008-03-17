@@ -168,7 +168,8 @@ public class Query
 
 		List pars = new ArrayList();
 		String preparedSql = getPreparedSQL( this.params, pars );
-
+		__LOGGER.debug( preparedSql );
+		
 		try
 		{
 			PreparedStatement statement = connection.prepareStatement( preparedSql );
@@ -246,11 +247,10 @@ public class Query
 		}
 		else if( object.getClass().isArray() )
 		{
-			Object[] array = (Object[])object;
-			int size = array.length;
+			int size = Array.getLength( object );
 			Assert.isTrue( size > 0, "Parameter [" + name + "] is empty array" );
-			for( Object object2 : array )
-				pars.add( object2 );
+			for( int j = 0; j < size; j++ )
+				pars.add( Array.get( object, j ) );
 			appendExtraQuestionMarks( buildSql, size - 1 );
 		}
 		else
@@ -269,8 +269,6 @@ public class Query
 		}
 		else
 			gsql = this.sql;
-		
-		__LOGGER.debug( gsql );
 		
 		Assert.notNull( pars );
 		Assert.isTrue( pars.isEmpty() );
