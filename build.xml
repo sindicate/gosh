@@ -146,7 +146,7 @@
 	</target>
 
 	<target name="jar-versioned" depends="build,jar,updateversion"> <!-- Builds the jar file -->
-		<copy file="${build.dist}/${ant.project.name}.jar" preservelastmodified="yes" tofile="${build.dist}/${ant.project.name}=${module.version}.jar"/>
+		<copy file="${build.dist}/${ant.project.name}.jar" preservelastmodified="yes" tofile="${build.dist}/${ant.project.name}-${module.version}.jar"/>
 	</target>
 
 	<target name="srcjar" depends="updateversion"> <!-- Builds the src jar file -->
