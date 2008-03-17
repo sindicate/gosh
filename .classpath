@@ -24,5 +24,6 @@
 	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-impl-1.0-incubating.jar"/>
 	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-lib-1.0-incubating.jar"/>
 	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-tools-1.0-incubating.jar"/>
+	<classpathentry kind="lib" path="tools/test/testng-5.7-jdk15.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

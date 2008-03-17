@@ -1,5 +1,10 @@
 package ronnie.gosh;
 
+import groovy.lang.Closure;
+import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyCodeSource;
+import groovy.lang.GroovyObject;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -7,11 +12,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
-
-import groovy.lang.Closure;
-import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyCodeSource;
-import groovy.lang.GroovyObject;
 
 import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.util.Assert;
@@ -44,9 +44,9 @@ public class QueryCompiler
 		return new CompiledQuery( (Closure)object.invokeMethod( "getClosure", null ), lastModified );
 	}
 	
-	static public CompiledQuery compile( String sql, String name, long lastModified )
+	static public CompiledQuery compile( String sql, String path, long lastModified )
 	{
-		return compile( new StringReader( sql ), name, lastModified );
+		return compile( new StringReader( sql ), path, lastModified );
 	}
 	
 	static public String parse( Reader reader, String pkg, String cls )

@@ -1,13 +1,13 @@
 package ronnie.gosh;
 
-import java.util.Map;
-
 import groovy.lang.Closure;
+
+import java.util.Map;
 
 // TODO Rename to QueryTemplate
 public class CompiledQuery
 {
-	private Closure _query;
+	private final Closure _query;
 	protected long lastModified;
 	
 	public CompiledQuery( Closure query, long lastModified )

@@ -1,5 +1,10 @@
 package ronnie.gosh;
 
+import groovy.lang.Closure;
+import groovy.lang.GString;
+import groovy.text.SimpleTemplateEngine;
+import groovy.text.TemplateEngine;
+
 import java.lang.reflect.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,11 +23,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
-
-import groovy.lang.Closure;
-import groovy.lang.GString;
-import groovy.text.SimpleTemplateEngine;
-import groovy.text.TemplateEngine;
 
 import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.collections.ArrayListIterator;
@@ -71,20 +71,9 @@ public class Query
 	
 	public ResultSet resultSet( Connection connection )
 	{
-		GString sql;
-		if( this.query != null )
-		{
-			this.query.setDelegate( this.params );
-			sql = (GString)this.query.call();
-		}
-		else
-			sql = this.sql;
-		
-		__LOGGER.debug( sql );
-		
 		try
 		{
-			PreparedStatement statement = getStatement( sql, connection );
+			PreparedStatement statement = getStatement( connection );
 			return statement.executeQuery();
 		}
 		catch( SQLException e )
@@ -172,13 +161,13 @@ public class Query
 		}
 	}
 	
-	public PreparedStatement getStatement( GString sql, Connection connection )
+	public PreparedStatement getStatement( Connection connection )
 	{
 		if( __LOGGER.isDebugEnabled() )
 			__LOGGER.debug( this );
 
 		List pars = new ArrayList();
-		String preparedSql = getPreparedSQL( sql, this.params, pars );
+		String preparedSql = getPreparedSQL( this.params, pars );
 
 		try
 		{
@@ -270,8 +259,19 @@ public class Query
 		}
 	}
 	
-	protected String getPreparedSQL( GString gsql, Map params, List pars )
+	public String getPreparedSQL( Map params, List pars )
 	{
+		GString gsql;
+		if( this.query != null )
+		{
+			this.query.setDelegate( this.params );
+			gsql = (GString)this.query.call();
+		}
+		else
+			gsql = this.sql;
+		
+		__LOGGER.debug( gsql );
+		
 		Assert.notNull( pars );
 		Assert.isTrue( pars.isEmpty() );
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project basedir="." default="none" name="gosh">
+<project basedir="." default="none" name="idt-gosh">
 
 	<!-- Property file -->
 	
