@@ -30,12 +30,12 @@ import com.logicacmg.idt.commons.util.Assert;
 
 public class Query
 {
-	static private Logger __LOGGER = Logger.getLogger( Query.class ); 
+	static private final Logger __LOGGER = Logger.getLogger( Query.class ); 
 	
 	static protected final TemplateEngine templateEngine = new SimpleTemplateEngine();
 
-	static private String parameterMarkupStart = "#{";
-//	static private String parameterMarkupEnd = "}";
+	static private final String parameterMarkupStart = "#{";
+	static private final char parameterMarkupEnd = '}';
 
 	private GString sql;
 	private Closure query;
@@ -275,10 +275,12 @@ public class Query
 
 		StringBuilder buildSql = new StringBuilder();
 
-		int len = gsql.getValueCount();
+		String[] strings = gsql.getStrings(); 
+		Object[] values = gsql.getValues(); 
+		int len = values.length;
 		for( int i = 0; i <= len; i++ )
 		{
-			String sql = gsql.getStrings()[ i ];
+			String sql = strings[ i ];
 			
 			int currentPos = 0;
 			int pos = sql.indexOf( parameterMarkupStart );
@@ -286,11 +288,13 @@ public class Query
 			{
 				buildSql.append( sql.substring( currentPos, pos ) );
 	
-				int pos2 = sql.indexOf( '}', pos + 3 );
+				int pos2 = sql.indexOf( parameterMarkupEnd, pos + 3 );
 				Assert.isTrue( pos2 >= 0, "Couldn't find corresponding '}'" );
 	
 				if( sql.indexOf( "ORACLE-IN ", pos + 2 ) == pos + 2 )
+				{
 					processOracleIn( sql, pos, pos2, buildSql, params, pars );
+				}
 				else if( sql.charAt( pos + 2 ) == '\'' )
 				{
 					String name = sql.substring( pos + 3, pos2 );
@@ -299,8 +303,7 @@ public class Query
 				else
 				{
 					String name = sql.substring( pos + 2, pos2 );
-					Object object = getParameter( name );
-					appendParameter( object, name, buildSql, pars );
+					appendParameter( getParameter( name ), name, buildSql, pars );
 				}
 	
 				currentPos = pos2 + 1;
@@ -311,8 +314,7 @@ public class Query
 
 			if( i < len )
 			{
-				Object object = gsql.getValue( i );
-				appendParameter( object, "unknown", buildSql, pars );
+				appendParameter( values[ i ], "unknown", buildSql, pars );
 			}
 		}
 
