@@ -60,6 +60,7 @@ public class RequestContext
 	protected String actionName;
 	
 	protected Map fragmentsCollector;
+	protected Map plannedRedirect;
 
 	// Initial	
 	public RequestContext configure( HttpServletRequest request, HttpServletResponse response, ApplicationContext applicationContext, String controllerName, String actionName, Map args )
@@ -303,6 +304,21 @@ public class RequestContext
 		}
 		
 		return url( urlBuilder.toString() );
+	}
+	
+	public void setRedirect( Map args )
+	{
+		this.plannedRedirect = args;
+	}
+
+	public boolean executePlannedRedirect()
+	{
+		if( this.plannedRedirect != null )
+		{
+			redirect( this.plannedRedirect );
+			return true;
+		}
+		return false;
 	}
 	
 	public void redirect( Map args )

@@ -7,15 +7,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
 import ronnie.gosh.RequestContext;
 
 import commonj.sdo.DataObject;
 
 public class Form extends Composite
 {
-	static private final Logger log = Logger.getLogger( Form.class );
+//	static private final Logger log = Logger.getLogger( Form.class );
 
 	static public class Value
 	{
@@ -71,13 +69,44 @@ public class Form extends Composite
 		{
 			out.print( "	<tr class=\"data\"><th>" );
 			out.print( value.description );
-			out.print( ":</th><td><input name=\"" );
-			out.print( path );
-			out.print( '/' );
-			out.print( value.path );
-			out.print( "\" value=\"" );
-			print( out, this.data.getString( this.path + "[1]/" + value.path ) );
-			out.print( "\"/></td></tr>\n" );
+			out.print( ":</th><td>" );
+			if( value.select != null )
+			{
+				Object value2 = this.data.get( this.path + "[1]/" + value.path );
+				
+				List<DataObject> sdata = (List)value.select.retrieve.call();
+				out.print( "<select name=\"" );
+				out.print( path );
+				out.print( '/' );
+				out.print( value.path );
+				out.print( "\">" );
+				if( value2 == null )
+					out.print( "<option value=\"\" selected=\"selected\">(select)</option>" );
+				for( DataObject object : sdata )
+				{
+					out.print( "<option value=\"" );
+					Object key = object.get( value.select.key ); 
+					out.print( key );
+					if( value2 != null && key.equals( value2 ) )
+						out.print( "\" selected=\"selected\">" );
+					else
+						out.print( "\">" );
+					out.print( object.get( value.select.display ) );
+					out.print( "</option>" );
+				}
+				out.print( "</select>" );
+			}
+			else
+			{
+				out.print( "<input name=\"" );
+				out.print( path );
+				out.print( '/' );
+				out.print( value.path );
+				out.print( "\" value=\"" );
+				print( out, this.data.getString( this.path + "[1]/" + value.path ) );
+				out.print( "\"/>" );
+			}
+			out.print( "</td></tr>\n" );
 		}
 		out.print( "	<tr class=\"buttons\"><td colspan=\"2\">" );
 		this.updateButton.render( context );

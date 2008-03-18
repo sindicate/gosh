@@ -7,15 +7,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
 import ronnie.gosh.RequestContext;
 
 import commonj.sdo.DataObject;
 
 public class Table extends Composite
 {
-	static private final Logger log = Logger.getLogger( Table.class );
+//	static private final Logger log = Logger.getLogger( Table.class );
 
 	static public class Column
 	{

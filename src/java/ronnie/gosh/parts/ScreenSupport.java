@@ -94,7 +94,16 @@ public abstract class ScreenSupport extends Composite implements Screen
 			action = action.substring( pos + 1 );
 			Component component = this.childs.get( child );
 			component.call( action );
+//			if( result != null )
+//				if( result.redirect != null )
+//				{
+//					context.redirect( result.redirect );
+//					return;
+//				}
 		}
+		
+		if( context.executePlannedRedirect() )
+			return;
 		
 		if( "POST".equals( context.getRequest().getMethod() ) )
 			context.redirect( null );
