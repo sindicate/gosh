@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
+import ronnie.gosh.parts.Form.Value;
 import ronnie.gosh.parts.Table.Column;
 
 import com.logicacmg.idt.commons.NotImplementedException;
@@ -44,22 +45,44 @@ public class ScreenBuilder implements GroovyObject
 		return getMetaClass().getProperty( this, name );
 	}
 	
-	protected Form form()
+	protected Form form( Map args, Closure closure )
 	{
-		return form( null );
-	}
-	
-	protected Form form( Map args )
-	{
-		String name = null;
-		if( args != null )
-		{
-			name = (String)args.remove( "name" );
-		}
-		Form form = new Form( name, this.current, args );
+		String name = (String)args.remove( "name" );
+		String path = (String)args.remove( "path" );
+		Closure retrieve = (Closure)args.remove( "retrieve" );
+		Closure update = (Closure)args.remove( "update" );
+		Errors errors = (Errors)args.remove( "errors" );
+		Form form = new Form( name, this.current, path, retrieve, update, args, errors );
+
+		Composite old = this.current;
+		this.current = form;
+		
+		closure.setDelegate( this );
+		closure.call();
+		
+		this.current = old;
+
+		// TODO Check that values have been added
 		return form;
 	}
 
+	protected Value value( Map args )
+	{
+		Value value = new Value();
+		value.path = (String)args.get( "path" );
+		value.description = (String)args.get( "description" );
+		Boolean edit = (Boolean)args.get( "edit" );
+		value.edit = edit != null ? edit : false;
+		Select select = (Select)args.get( "select" );
+		value.select = select;
+		Boolean mandatory = (Boolean)args.get( "mandatory" );
+		value.mandatory = mandatory != null ? mandatory : false;
+
+		Form form = (Form)this.current;
+		form.addValue( value );
+		return value;
+	}
+	
 	protected Message message()
 	{
 		return new Message( null, this.current );

@@ -8,15 +8,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.apache.tuscany.sdo.util.DataObjectUtil;
-import org.apache.tuscany.sdo.util.DataObjectUtil.Accessor;
-import org.eclipse.emf.ecore.EObject;
 
 import ronnie.gosh.RequestContext;
 
 import commonj.sdo.DataObject;
-import commonj.sdo.Property;
-import commonj.sdo.Type;
 
 public class Table extends Composite
 {
@@ -96,6 +91,7 @@ public class Table extends Composite
 		int i = 1;
 		for( DataObject row : data )
 		{
+//			out.print( row.getType().getName() + " " + row.getType().getURI() );
 			String path2 = path + "[" + i + "]/";
 			out.print( "	<tr class=\"row\">\n" );
 			for( Column column : this.columns )
@@ -164,12 +160,6 @@ public class Table extends Composite
 			this.status.clear();
 	}
 
-	protected void print( PrintWriter out, String s )
-	{
-		if( s != null )
-			out.print( s );
-	}
-
 	public void addColumn( Column column )
 	{
 		this.columns.add( column );
@@ -177,10 +167,6 @@ public class Table extends Composite
 	
 	public void update()
 	{
-		this.errors.addMessage( "Sorry, it didn't work!" );
-		if( this.errors.hasErrors() )
-			return;
-		
 		this.update.call( new Object[] { this.data } );
 		retrieve();
 		if( this.status != null )
@@ -194,46 +180,10 @@ public class Table extends Composite
 			this.status.setMessage( getRowCount() + " rows retrieved" );
 	}
 	
-	protected Integer toInteger( String value )
-	{
-		if( value == null )
-			return null;
-		return Integer.valueOf( value );
-	}
-	
-	protected void setValue0( String path, String value )
-	{
-		// TODO Check that only editable things are being set
-		log.debug( "set [" + this.getClass() + "][" + path + "] <- [" + value + "]" );
-		Accessor accessor = DataObjectUtil.Accessor.create( (EObject)this.data, path, value );
-		try
-		{
-			Property property = accessor.getProperty();
-			Type type = property.getType();
-			log.debug( "type: " + type );
-			// TODO Better type checking
-			if( type.getName().equals( "IntObject" ) )
-				accessor.set( toInteger( value ) );
-			else
-				accessor.set( value );
-		}
-		finally
-		{
-			accessor.recycle();
-		}
-	}
-	
 	@Override
 	public void setValue( String path, String value )
 	{
-		Object old = this.data.get( path );
-		if( value == null )
-		{
-			if( old != null )
-				setValue0( path, value );
-		}
-		else if( !value.equals( old ) )
-			setValue0( path, value );
+		setDataObjectValue( this.data, path, value );
 	}
 	
 	public DataObject addRow()
