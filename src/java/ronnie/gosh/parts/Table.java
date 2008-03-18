@@ -101,18 +101,21 @@ public class Table extends Composite
 					out.print( "		<td class=\"edit\">" );
 					if( column.select != null )
 					{
+						Object value = row.get( column.path );
+						
 						List<DataObject> sdata = (List)column.select.retrieve.call();
 						out.print( "<select name=\"" );
 						out.print( path2 );
 						out.print( column.path );
 						out.print( "\">" );
-						out.print( "<option value=\"\">(select)</option>" );
+						if( value == null )
+							out.print( "<option value=\"\" selected=\"selected\">(select)</option>" );
 						for( DataObject object : sdata )
 						{
 							out.print( "<option value=\"" );
 							Object key = object.get( column.select.key ); 
 							out.print( key );
-							if( key.equals( row.get( column.path ) ) )
+							if( value != null && key.equals( value ) )
 								out.print( "\" selected=\"selected\">" );
 							else
 								out.print( "\">" );
