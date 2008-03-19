@@ -134,11 +134,11 @@ public class Form extends Composite
 					out.print( '/' );
 					out.print( value.path );
 					out.print( "\" value=\"" );
-					print( out, this.data.getString( this.path + "[1]/" + value.path ) );
+					print( context, out, this.data.getString( this.path + "[1]/" + value.path ) );
 					out.print( "\"/>" );
 				}
 				else
-					print( out, this.data.getString( this.path + "[1]/" + value.path ) );
+					print( context, out, this.data.getString( this.path + "[1]/" + value.path ) );
 			}
 			out.print( "</td></tr>\n" );
 		}

@@ -67,7 +67,7 @@ public class Table extends Composite
 		for( Column column : this.columns )
 		{
 			out.print( "<th>" );
-			print( out, column.header );
+			print( context, out, column.header );
 			out.print( "</th>" );
 		}
 		out.print( "<th/>" );
@@ -114,14 +114,14 @@ public class Table extends Composite
 						out.print( path2 );
 						out.print( column.path );
 						out.print( "\" value=\"" );
-						print( out, row.getString( column.path ) );
+						print( context, out, row.get( column.path ) );
 						out.print( "\"/>" );
 					}
 				}
 				else
 				{
 					out.print( "		<td>" );
-					print( out, row.getString( column.path ) );
+					print( context, out, row.getString( column.path ) );
 				}
 				out.print( "</td>\n" );
 			}

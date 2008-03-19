@@ -3,6 +3,11 @@ package ronnie.gosh.parts;
 import groovy.lang.Closure;
 
 import java.io.PrintWriter;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.apache.log4j.Logger;
 import org.apache.tuscany.sdo.util.DataObjectUtil;
@@ -13,6 +18,7 @@ import org.eclipse.emf.ecore.EObject;
 import ronnie.gosh.RequestContext;
 
 import com.logicacmg.idt.commons.NotImplementedException;
+import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.util.Assert;
 import commonj.sdo.DataObject;
 import commonj.sdo.Property;
@@ -82,10 +88,39 @@ public abstract class Component
 		return Integer.valueOf( value );
 	}
 	
-	static protected void setValue0( DataObject data, String path, String value )
+	static protected Date toDate( String value )
+	{
+		if( value == null )
+			return null;
+		DateFormat parser = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ); 
+		try
+		{
+			return parser.parse( value );
+		}
+		catch( ParseException e )
+		{
+			throw new SystemException( e );
+		}
+	}
+	
+	static protected Timestamp toTimestamp( String value )
+	{
+		if( value == null )
+			return null;
+		DateFormat parser = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ); 
+		try
+		{
+			return new Timestamp( parser.parse( value ).getTime() );
+		}
+		catch( ParseException e )
+		{
+			throw new SystemException( e );
+		}
+	}
+	
+	static public void setDataObjectValue( DataObject data, String path, String value )
 	{
 		// TODO Check that only editable things are being set
-		log.debug( "set [" + path + "] <- [" + value + "]" );
 		Accessor accessor = DataObjectUtil.Accessor.create( (EObject)data, path, value );
 		try
 		{
@@ -93,27 +128,37 @@ public abstract class Component
 			Type type = property.getType();
 			log.debug( "type: " + type );
 			// TODO Better type checking
+			Object v;
 			if( type.getName().equals( "IntObject" ) )
-				accessor.set( toInteger( value ) );
+				v = toInteger( value );
+			else if( type.getName().equals( "Date" ) )
+				v = toDate( value );
+			else if( type.getName().equals( "Timestamp" ) )
+				v = toTimestamp( value );
 			else
-				accessor.set( value );
+				v = value;
+
+			Object old = data.get( path );
+			if( v == null )
+			{
+				if( old != null )
+				{
+					log.debug( "  set [" + path + "] = [" + old + "] <- [" + v + "]" );
+					accessor.set( v );
+				}
+			}
+			else if( !v.equals( old ) )
+			{
+				log.debug( "old: " + ( old != null ? old.getClass() : "null" ) );
+				log.debug( "new: " + v.getClass() );
+				log.debug( "  set [" + path + "] = [" + old + "] <- [" + v + "]" );
+				accessor.set( v );
+			}
 		}
 		finally
 		{
 			accessor.recycle();
 		}
-	}
-	
-	static public void setDataObjectValue( DataObject data, String path, String value )
-	{
-		Object old = data.get( path );
-		if( value == null )
-		{
-			if( old != null )
-				setValue0( data, path, value );
-		}
-		else if( !value.equals( old ) )
-			setValue0( data, path, value );
 	}
 	
 	public void setValue( String path, String value )
@@ -146,9 +191,20 @@ public abstract class Component
 		throw new UnsupportedOperationException();
 	}
 	
-	protected void print( PrintWriter out, String s )
+	protected void print( RequestContext context, PrintWriter out, Object value )
 	{
-		if( s != null )
-			out.print( s );
+		if( value != null )
+		{
+			String s;
+			if( value instanceof Timestamp )
+			{
+				// TODO Need to use locale here?
+				DateFormat format = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ); 
+				s = format.format( value );
+			}
+			else
+				s = value.toString();
+			out.print( context.encode( s ) );
+		}
 	}
 }
