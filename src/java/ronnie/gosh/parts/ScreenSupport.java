@@ -1,6 +1,7 @@
 package ronnie.gosh.parts;
 
 import groovy.lang.Closure;
+import groovy.lang.MissingPropertyException;
 
 import java.io.PrintWriter;
 import java.util.Collections;
@@ -10,7 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 import ronnie.gosh.RequestContext;
 
@@ -19,7 +19,7 @@ import com.logicacmg.idt.commons.util.StringUtil;
 
 
 // TODO Need part builder
-public abstract class ScreenSupport extends Composite implements Screen
+abstract public class ScreenSupport extends Composite implements Screen
 {
 	static private Logger log = Logger.getLogger( ScreenSupport.class );
 	
@@ -31,12 +31,26 @@ public abstract class ScreenSupport extends Composite implements Screen
 		super( null, null );
 	}
 	
-	public void init()
+	public void init( RequestContext context )
 	{
 		this.build();
+		
+		try
+		{
+			Closure closure = (Closure)getProperty( "build" );
+			closure.setDelegate( context );
+			closure.call();
+		}
+		catch( MissingPropertyException e )
+		{
+			// ignore
+		}
 	}
 	
-	abstract public void build();
+	public void build()
+	{
+		//
+	}
 
 	// TODO This can be non-public?
 	// TODO Use the referer to detect if a refresh is needed?
@@ -72,13 +86,16 @@ public abstract class ScreenSupport extends Composite implements Screen
 			else
 			{
 				int pos = name.indexOf( '.' );
-				Assert.isTrue( pos > 0 );
-				String child = name.substring( 0, pos );
-				String prop = name.substring( pos + 1 );
-				Component component = this.childs.get( child );
-				String value = request.getParameter( name );
-				component.setValue( prop, StringUtil.emptyToNull( value ) );
-				flag = true;
+				if( pos > 0 )
+				{
+					// TODO Use another marker for this?
+					String child = name.substring( 0, pos );
+					String prop = name.substring( pos + 1 );
+					Component component = this.childs.get( child );
+					String value = request.getParameter( name );
+					component.setValue( prop, StringUtil.emptyToNull( value ) );
+					flag = true;
+				}
 			}
 		}
 		
@@ -94,12 +111,6 @@ public abstract class ScreenSupport extends Composite implements Screen
 			action = action.substring( pos + 1 );
 			Component component = this.childs.get( child );
 			component.call( action );
-//			if( result != null )
-//				if( result.redirect != null )
-//				{
-//					context.redirect( result.redirect );
-//					return;
-//				}
 		}
 		
 		if( context.executePlannedRedirect() )
@@ -126,7 +137,7 @@ public abstract class ScreenSupport extends Composite implements Screen
 		response.setHeader( "Cache-Control", "no-cache" ); // Needed for IE6
 		response.setHeader( "Cache-Control", "no-store" ); // no-store prevents back-button caching in both IE7 and Firefox
 
-		Closure closure = (Closure)InvokerHelper.getProperty( this, "render" );
+		Closure closure = (Closure)getProperty( "render" );
 		if( closure != null )
 		{
 			closure.setDelegate( context );

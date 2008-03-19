@@ -6,6 +6,7 @@ import groovy.lang.MetaClass;
 
 import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import ronnie.gosh.parts.Form.Value;
@@ -16,7 +17,7 @@ import commonj.sdo.DataObject;
 
 public class ScreenBuilder implements GroovyObject
 {
-//	static private final Logger log = Logger.getLogger( ScreenBuilder.class );
+	static private final Logger log = Logger.getLogger( ScreenBuilder.class );
 	
 	protected ScreenSupport screen;
 	protected Composite current;
@@ -30,7 +31,9 @@ public class ScreenBuilder implements GroovyObject
 	public Object call( Closure closure )
 	{
 		closure.setDelegate( this );
-		return closure.call();
+		Object result = closure.call();
+		closure.setResolveStrategy( Closure.OWNER_ONLY );
+		return result;
 	}
 
 	@Override
@@ -48,17 +51,19 @@ public class ScreenBuilder implements GroovyObject
 	protected Form form( Map args, Closure closure )
 	{
 		String name = (String)args.remove( "name" );
+		Object title = args.remove( "title" );
 		String path = (String)args.remove( "path" );
 		Closure retrieve = (Closure)args.remove( "retrieve" );
 		Closure update = (Closure)args.remove( "update" );
 		Errors errors = (Errors)args.remove( "errors" );
-		Form form = new Form( name, this.current, path, retrieve, update, args, errors );
-
+		Form form = new Form( name, title != null ? title.toString() : null, this.current, path, retrieve, update, args, errors );
+		
 		Composite old = this.current;
 		this.current = form;
 		
 		closure.setDelegate( this );
 		closure.call();
+		closure.setResolveStrategy( Closure.OWNER_ONLY );
 		
 		this.current = old;
 
@@ -118,6 +123,7 @@ public class ScreenBuilder implements GroovyObject
 		
 		closure.setDelegate( this );
 		closure.call();
+		closure.setResolveStrategy( Closure.OWNER_ONLY );
 		
 		this.current = old;
 

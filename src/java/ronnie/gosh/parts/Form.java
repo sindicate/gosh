@@ -21,6 +21,7 @@ public class Form extends Composite
 		protected String description;
 		protected boolean edit;
 		protected Select select;
+		protected List<DataObject> selectData;
 		protected boolean mandatory;
 	}
 
@@ -31,11 +32,13 @@ public class Form extends Composite
 	protected DataObject data;
 	protected String path;
 	protected Button updateButton;
+	protected String title;
 
-	public Form( String name, Composite parent, String path, Closure retrieve, Closure update, Map args, Errors errors )
+	public Form( String name, String title, Composite parent, String path, Closure retrieve, Closure update, Map args, Errors errors )
 	{
 		super( name, parent );
 		
+		this.title = title;
 		this.retrieve = retrieve;
 		this.update = update;
 		this.errors = errors;
@@ -51,9 +54,14 @@ public class Form extends Composite
 
 	}
 	
-	public void retrieve()
+	public void retrieve( Object... args )
 	{
-		this.data = (DataObject)this.retrieve.call();
+		this.data = (DataObject)this.retrieve.call( args );
+		
+		// Retrieve select data
+		for( Value value : this.values )
+			if( value.select != null )
+				value.selectData = (List)value.select.retrieve.call();
 	}
 	
 	@Override
@@ -64,53 +72,82 @@ public class Form extends Composite
 		String path = this.name + "." + this.path + "[1]";
 		
 		out.print( "<table class=\"form\">\n" );
-		out.print( "	<tr class=\"header\"><td colspan=\"2\">Create Issue</td></tr>\n" );
+		if( this.title != null )
+		{
+			out.print( "	<tr class=\"header\"><td colspan=\"2\">" );
+			out.print( this.title );
+			out.print( "</td></tr>\n" );
+		}
+		boolean edit = false;
 		for( Value value : this.values )
 		{
+			if( value.edit )
+				edit = true;
+			
 			out.print( "	<tr class=\"data\"><th>" );
 			out.print( value.description );
 			out.print( ":</th><td>" );
 			if( value.select != null )
 			{
 				Object value2 = this.data.get( this.path + "[1]/" + value.path );
-				
-				List<DataObject> sdata = (List)value.select.retrieve.call();
-				out.print( "<select name=\"" );
-				out.print( path );
-				out.print( '/' );
-				out.print( value.path );
-				out.print( "\">" );
-				if( value2 == null )
-					out.print( "<option value=\"\" selected=\"selected\">(select)</option>" );
-				for( DataObject object : sdata )
+				if( value.edit )
 				{
-					out.print( "<option value=\"" );
-					Object key = object.get( value.select.key ); 
-					out.print( key );
-					if( value2 != null && key.equals( value2 ) )
-						out.print( "\" selected=\"selected\">" );
-					else
-						out.print( "\">" );
-					out.print( object.get( value.select.display ) );
-					out.print( "</option>" );
+					out.print( "<select name=\"" );
+					out.print( path );
+					out.print( '/' );
+					out.print( value.path );
+					out.print( "\">" );
+					if( value2 == null )
+						out.print( "<option value=\"\" selected=\"selected\">(select)</option>" );
+					for( DataObject object : value.selectData )
+					{
+						out.print( "<option value=\"" );
+						Object key = object.get( value.select.key ); 
+						out.print( key );
+						if( value2 != null && key.equals( value2 ) )
+							out.print( "\" selected=\"selected\">" );
+						else
+							out.print( "\">" );
+						out.print( object.get( value.select.display ) );
+						out.print( "</option>" );
+					}
+					out.print( "</select>" );
 				}
-				out.print( "</select>" );
+				else
+				{
+					List<DataObject> sdata = (List)value.select.retrieve.call();
+					if( value2 != null )
+						for( DataObject object : sdata )
+						{
+							Object key = object.get( value.select.key ); 
+							if( key.equals( value2 ) )
+								out.print( object.get( value.select.display ) );
+						}
+				}
 			}
 			else
 			{
-				out.print( "<input name=\"" );
-				out.print( path );
-				out.print( '/' );
-				out.print( value.path );
-				out.print( "\" value=\"" );
-				print( out, this.data.getString( this.path + "[1]/" + value.path ) );
-				out.print( "\"/>" );
+				if( value.edit )
+				{
+					out.print( "<input name=\"" );
+					out.print( path );
+					out.print( '/' );
+					out.print( value.path );
+					out.print( "\" value=\"" );
+					print( out, this.data.getString( this.path + "[1]/" + value.path ) );
+					out.print( "\"/>" );
+				}
+				else
+					print( out, this.data.getString( this.path + "[1]/" + value.path ) );
 			}
 			out.print( "</td></tr>\n" );
 		}
-		out.print( "	<tr class=\"buttons\"><td colspan=\"2\">" );
-		this.updateButton.render( context );
-		out.print( "</td></tr>\n" );
+		if( edit )
+		{
+			out.print( "	<tr class=\"buttons\"><td colspan=\"2\">" );
+			this.updateButton.render( context );
+			out.print( "</td></tr>\n" );
+		}
 		out.print( "</table>\n" );
 	}
 

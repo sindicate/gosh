@@ -22,6 +22,7 @@ public class Table extends Composite
 		protected boolean edit;
 		protected boolean key;
 		protected Select select;
+		protected List<DataObject> selectData;
 		protected boolean mandatory;
 	}
 
@@ -58,22 +59,9 @@ public class Table extends Composite
 	public void render( RequestContext context )
 	{
 		// TODO Get the complete path instead of only the name
-		
+
 		PrintWriter out = context.getOut();
-//		if( this.attributes.size() > 0 )
-//		{
-//			out.print( "<table" );
-//			for( Entry< String, String > attribute : this.attributes.entrySet() )
-//			{
-//				out.print( ' ' );
-//				out.print( attribute.getKey() );
-//				out.print( "=\"" );
-//				out.print( attribute.getValue() );
-//				out.print( '"' );
-//			}
-//			out.print( '>' );
-//		}
-//		else
+		
 		out.print( "<table class=\"table\">\n" );
 		out.print( "	<tr class=\"row\">" );
 		for( Column column : this.columns )
@@ -89,7 +77,6 @@ public class Table extends Composite
 		int i = 1;
 		for( DataObject row : data )
 		{
-//			out.print( row.getType().getName() + " " + row.getType().getURI() );
 			String path2 = path + "[" + i + "]/";
 			out.print( "	<tr class=\"row\">\n" );
 			for( Column column : this.columns )
@@ -101,14 +88,13 @@ public class Table extends Composite
 					{
 						Object value = row.get( column.path );
 						
-						List<DataObject> sdata = (List)column.select.retrieve.call();
 						out.print( "<select name=\"" );
 						out.print( path2 );
 						out.print( column.path );
 						out.print( "\">" );
 						if( value == null )
 							out.print( "<option value=\"\" selected=\"selected\">(select)</option>" );
-						for( DataObject object : sdata )
+						for( DataObject object : column.selectData )
 						{
 							out.print( "<option value=\"" );
 							Object key = object.get( column.select.key ); 
@@ -177,6 +163,12 @@ public class Table extends Composite
 	public void retrieve()
 	{
 		this.data = (DataObject)this.retrieve.call();
+		
+		// Retrieve select data
+		for( Column column : this.columns )
+			if( column.select != null )
+				column.selectData = (List)column.select.retrieve.call();
+		
 		if( this.status != null )
 			this.status.setMessage( getRowCount() + " rows retrieved" );
 	}
