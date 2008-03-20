@@ -8,8 +8,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -61,6 +63,7 @@ public class RequestContext
 	
 	protected Map fragmentsCollector;
 	protected Map plannedRedirect;
+	protected List< String > errors = new ArrayList< String >(); // TODO Do not initialize
 
 	// Initial	
 	public RequestContext configure( HttpServletRequest request, HttpServletResponse response, ApplicationContext applicationContext, String controllerName, String actionName, Map args )
@@ -477,6 +480,16 @@ public class RequestContext
 		ScreenManager screenManager = (ScreenManager)session.getAttribute( "screenManager" );
 		if( screenManager != null )
 			screenManager.clearScreen( name );
+	}
+
+	public void addError( String error )
+	{
+		this.errors.add( error );
+	}
+	
+	public boolean hasErrors()
+	{
+		return !this.errors.isEmpty();
 	}
 }
 

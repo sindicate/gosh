@@ -48,4 +48,11 @@ public abstract class Composite extends Component
 			return this.childs.get( name );
 		throw new MissingPropertyException( name );
 	}
+
+	@Override
+	public void applyRequest( RequestContext context )
+	{
+		for( Component child : this.childs.values() )
+			child.applyRequest( context );
+	}
 }

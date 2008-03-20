@@ -5,9 +5,9 @@ import groovy.lang.MissingPropertyException;
 
 import java.io.PrintWriter;
 import java.util.Collections;
-import java.util.Enumeration;
+import java.util.Map;
+import java.util.Map.Entry;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
@@ -15,7 +15,6 @@ import org.apache.log4j.Logger;
 import ronnie.gosh.RequestContext;
 
 import com.logicacmg.idt.commons.util.Assert;
-import com.logicacmg.idt.commons.util.StringUtil;
 
 
 // TODO Need part builder
@@ -66,56 +65,45 @@ abstract public class ScreenSupport extends Composite implements Screen
 			return;
 		}
 		
-		HttpServletRequest request = context.getRequest();
-		
-		String action = null;
-
 		// TODO Can't execute an action when the screen has just been build?
 		
-		// Analyze the parameters
-		boolean flag = false;
-		
-		Enumeration< String > i = request.getParameterNames();
-		while( i.hasMoreElements() )
+		String action = null;
+		Map< String, String[] > pars = context.getRequest().getParameterMap();
+		for( Entry< String, String[] > entry : pars.entrySet() )
 		{
-			String name = i.nextElement();
+			String name = entry.getKey();
 			if( name.startsWith( "action(" ) && name.endsWith( ")" ) )
 			{
 				action = name;
-			}
-			else
-			{
-				int pos = name.indexOf( '.' );
-				if( pos > 0 )
-				{
-					// TODO Use another marker for this?
-					String child = name.substring( 0, pos );
-					String prop = name.substring( pos + 1 );
-					Component component = this.childs.get( child );
-					String value = request.getParameter( name );
-					component.setValue( prop, StringUtil.emptyToNull( value ) );
-					flag = true;
-				}
+				break;
 			}
 		}
-		
-		if( flag )
-			requestApplied();
-		
+
+		// Without an action it must be a redirect, only applyRequest() when an action is submitted
 		if( action != null )
 		{
-			action = action.substring( 7, action.length() - 1 );
-			int pos = action.indexOf( '.' );
-			Assert.isTrue( pos > 0 );
-			String child = action.substring( 0, pos );
-			action = action.substring( pos + 1 );
-			Component component = this.childs.get( child );
-			component.call( action );
+			log.debug( "Action: " + action );
+			
+			applyRequest( context );
+
+			if( !context.hasErrors() )
+			{
+				action = action.substring( 7, action.length() - 1 );
+				int pos = action.indexOf( '.' );
+				Assert.isTrue( pos > 0 );
+				String child = action.substring( 0, pos );
+				action = action.substring( pos + 1 );
+				Component component = this.childs.get( child );
+				component.call( action );
+			}
+
+			if( context.hasErrors() )
+				requestFailed( context );
 		}
 		
 		if( context.executePlannedRedirect() )
 			return;
-		
+
 		if( "POST".equals( context.getRequest().getMethod() ) )
 			context.redirect( null );
 		
@@ -123,6 +111,11 @@ abstract public class ScreenSupport extends Composite implements Screen
 	}
 	
 	protected void requestApplied()
+	{
+		// to be implemented by subclasses
+	}
+
+	protected void requestFailed( RequestContext context )
 	{
 		// to be implemented by subclasses
 	}
@@ -177,5 +170,22 @@ abstract public class ScreenSupport extends Composite implements Screen
 		out.print( "\">\n" );
 		closure.call();
 		out.print( "</form>\n" );
+	}
+
+	@Override
+	public void applyRequest( RequestContext context )
+	{
+		try
+		{
+			Closure closure = (Closure)getProperty( "applyRequestStart" );
+			closure.setDelegate( context );
+			closure.call();
+		}
+		catch( MissingPropertyException e )
+		{
+			// ignore
+		}
+
+		super.applyRequest( context );
 	}
 }

@@ -6,9 +6,11 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import ronnie.gosh.RequestContext;
 
+import com.logicacmg.idt.commons.util.Assert;
 import commonj.sdo.DataObject;
 
 public class Form extends Composite
@@ -29,7 +31,7 @@ public class Form extends Composite
 	protected Closure retrieve;
 	protected Closure update;
 	protected Errors errors;
-	protected DataObject data;
+	protected Data data;
 	protected String path;
 	protected Button updateButton;
 	protected String title;
@@ -56,7 +58,7 @@ public class Form extends Composite
 	
 	public void retrieve( Object... args )
 	{
-		this.data = (DataObject)this.retrieve.call( args );
+		this.data = new Data( (DataObject)this.retrieve.call( args ) );
 		
 		// Retrieve select data
 		for( Value value : this.values )
@@ -89,7 +91,7 @@ public class Form extends Composite
 			out.print( ":</th><td>" );
 			if( value.select != null )
 			{
-				Object value2 = this.data.get( this.path + "[1]/" + value.path );
+				Object value2 = this.data.dataObject.get( this.path + "[1]/" + value.path );
 				if( value.edit )
 				{
 					out.print( "<select name=\"" );
@@ -134,11 +136,11 @@ public class Form extends Composite
 					out.print( '/' );
 					out.print( value.path );
 					out.print( "\" value=\"" );
-					print( context, out, this.data.getString( this.path + "[1]/" + value.path ) );
+					print( context, out, this.data.dataObject.getString( this.path + "[1]/" + value.path ) );
 					out.print( "\"/>" );
 				}
 				else
-					print( context, out, this.data.getString( this.path + "[1]/" + value.path ) );
+					print( context, out, this.data.dataObject.getString( this.path + "[1]/" + value.path ) );
 			}
 			out.print( "</td></tr>\n" );
 		}
@@ -157,11 +159,27 @@ public class Form extends Composite
 	}
 
 	@Override
-	public void setValue( String path, String value )
+	public void applyRequest( RequestContext context )
 	{
-		setDataObjectValue( this.data, path, value );
+//		super.applyRequest( context );
+		
+		String path = getPath() + ".";
+		
+		Map< String, String[] > pars = context.getRequest().getParameterMap();
+		for( Entry< String, String[] > entry : pars.entrySet() )
+		{
+			String name = entry.getKey();
+			if( name.startsWith( path ) )
+			{
+				// TODO Use another marker for this?
+				String prop = name.substring( path.length() );
+				String[] values = entry.getValue();
+				Assert.isTrue( values.length == 1 );
+				this.data.set( prop, values[ 0 ], context );
+			}
+		}
 	}
-	
+
 	public class UpdateButton extends Button
 	{
 //		private final Logger log = Logger.getLogger( RemoveButton.class );

@@ -6,9 +6,11 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import ronnie.gosh.RequestContext;
 
+import com.logicacmg.idt.commons.util.Assert;
 import commonj.sdo.DataObject;
 
 public class Table extends Composite
@@ -27,8 +29,8 @@ public class Table extends Composite
 	}
 
 	protected List< Column > columns;
-	protected DataObject data;
-	protected String path;
+	protected Data data;
+	protected String dataPath;
 	protected Closure retrieve;
 	protected Closure update;
 	protected Button removeButton;
@@ -37,14 +39,15 @@ public class Table extends Composite
 	protected Button retrieveButton;
 	protected Message status;
 	protected Errors errors;
+	protected Map< String, String > unappliedRequestParameters;
 	
-	public Table( String name, Composite parent, DataObject data, String path, Closure retrieve, Closure update, Map args, Message status, Errors errors )
+	public Table( String name, Composite parent, DataObject data, String dataPath, Closure retrieve, Closure update, Map args, Message status, Errors errors )
 	{
 		super( name, parent );
 		
 		this.columns = new ArrayList();
-		this.data = data;
-		this.path = path;
+		this.data = new Data( data );
+		this.dataPath = dataPath;
 		this.update = update;
 		this.retrieve = retrieve;
 		this.removeButton = new RemoveButton();
@@ -72,25 +75,31 @@ public class Table extends Composite
 		}
 		out.print( "<th/>" );
 		out.print( "</tr>\n" );
-		List<DataObject> data = this.data.getList( this.path );
-		String path = this.name + "." + this.path;
+		List<DataObject> data = this.data.dataObject.getList( this.dataPath );
 		int i = 1;
+		String path = getPath() + ".";
+		Map< String, String > shadow = this.data.shadow;
 		for( DataObject row : data )
 		{
-			String path2 = path + "[" + i + "]/";
+			String rowPath = this.dataPath + "[" + i + "]/";
 			out.print( "	<tr class=\"row\">\n" );
 			for( Column column : this.columns )
 			{
+				String fieldPath = rowPath + column.path;
+				Object value;
+				if( shadow != null && shadow.containsKey( fieldPath ) )
+					value = shadow.get( fieldPath );
+				else
+					value = row.get( column.path );
+				
 				if( column.edit )
 				{
 					out.print( "		<td class=\"edit\">" );
 					if( column.select != null )
 					{
-						Object value = row.get( column.path );
-						
 						out.print( "<select name=\"" );
-						out.print( path2 );
-						out.print( column.path );
+						out.print( path );
+						out.print( fieldPath );
 						out.print( "\">" );
 						if( value == null )
 							out.print( "<option value=\"\" selected=\"selected\">(select)</option>" );
@@ -111,17 +120,17 @@ public class Table extends Composite
 					else
 					{
 						out.print( "<input name=\"" );
-						out.print( path2 );
-						out.print( column.path );
+						out.print( path );
+						out.print( fieldPath );
 						out.print( "\" value=\"" );
-						print( context, out, row.get( column.path ) );
+						print( context, out, value );
 						out.print( "\"/>" );
 					}
 				}
 				else
 				{
 					out.print( "		<td>" );
-					print( context, out, row.getString( column.path ) );
+					print( context, out, value );
 				}
 				out.print( "</td>\n" );
 			}
@@ -162,7 +171,7 @@ public class Table extends Composite
 	
 	public void retrieve()
 	{
-		this.data = (DataObject)this.retrieve.call();
+		this.data = new Data( (DataObject)this.retrieve.call() );
 		
 		// Retrieve select data
 		for( Column column : this.columns )
@@ -174,19 +183,37 @@ public class Table extends Composite
 	}
 	
 	@Override
-	public void setValue( String path, String value )
+	public void applyRequest( RequestContext context )
 	{
-		setDataObjectValue( this.data, path, value );
+//		super.applyRequest( context );
+
+		this.data.clearShadow();
+		
+		String path = getPath() + ".";
+		
+		Map< String, String[] > pars = context.getRequest().getParameterMap();
+		for( Entry< String, String[] > entry : pars.entrySet() )
+		{
+			String name = entry.getKey();
+			if( name.startsWith( path ) )
+			{
+				// TODO Use another marker for this?
+				String prop = name.substring( path.length() );
+				String[] values = entry.getValue();
+				Assert.isTrue( values.length == 1 );
+				this.data.set( prop, values[ 0 ], context );
+			}
+		}
 	}
-	
+
 	public DataObject addRow()
 	{
-		return this.data.createDataObject( this.path );
+		return this.data.dataObject.createDataObject( this.dataPath );
 	}
 	
 	public int getRowCount()
 	{
-		return this.data.getList( this.path ).size();
+		return this.data.dataObject.getList( this.dataPath ).size();
 	}
 	
 	public class RemoveButton extends Button
@@ -201,7 +228,7 @@ public class Table extends Composite
 		public void click( String arg )
 		{
 			int rownum = Integer.parseInt( arg );
-			Table.this.data.getList( Table.this.path ).remove( rownum - 1 );
+			Table.this.data.dataObject.getList( Table.this.dataPath ).remove( rownum - 1 );
 //			this.log.debug( "removed " + rownum );
 		}
 	}
