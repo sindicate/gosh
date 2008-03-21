@@ -1,6 +1,8 @@
 package ronnie.gosh.parts;
 
 import groovy.lang.Closure;
+import groovy.lang.GroovyObject;
+import groovy.lang.MetaProperty;
 import groovy.lang.MissingPropertyException;
 
 import java.io.PrintWriter;
@@ -18,7 +20,7 @@ import com.logicacmg.idt.commons.util.Assert;
 
 
 // TODO Need part builder
-abstract public class ScreenSupport extends Composite implements Screen
+abstract public class ScreenSupport extends Composite implements Screen, GroovyObject
 {
 	static private Logger log = Logger.getLogger( ScreenSupport.class );
 	
@@ -34,15 +36,12 @@ abstract public class ScreenSupport extends Composite implements Screen
 	{
 		build();
 		
-		try
+		MetaProperty property = getMetaClass().hasProperty( this, "build" );
+		if( property != null )
 		{
-			Closure closure = (Closure)getProperty( "build" );
+			Closure closure = (Closure)property.getProperty( this );
 			closure.setDelegate( context );
 			closure.call();
-		}
-		catch( MissingPropertyException e )
-		{
-			// ignore
 		}
 	}
 	
@@ -53,6 +52,7 @@ abstract public class ScreenSupport extends Composite implements Screen
 
 	// TODO This can be non-public?
 	// TODO Use the referer to detect if a refresh is needed?
+	// TODO synchronize on the session
 	public void call( RequestContext context )
 	{
 		this.context = context;
