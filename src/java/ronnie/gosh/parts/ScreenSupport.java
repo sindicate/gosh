@@ -32,7 +32,7 @@ abstract public class ScreenSupport extends Composite implements Screen
 	
 	public void init( RequestContext context )
 	{
-		this.build();
+		build();
 		
 		try
 		{

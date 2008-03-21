@@ -1,7 +1,7 @@
 package ronnie.gosh.parts;
 
 import groovy.lang.Closure;
-import groovy.lang.GroovyObject;
+import groovy.lang.GroovyInterceptable;
 import groovy.lang.MetaClass;
 
 import java.util.Map;
@@ -15,7 +15,7 @@ import ronnie.gosh.parts.Table.Column;
 import com.logicacmg.idt.commons.NotImplementedException;
 import commonj.sdo.DataObject;
 
-public class ScreenBuilder implements GroovyObject
+public class ScreenBuilder implements GroovyInterceptable
 {
 	static private final Logger log = Logger.getLogger( ScreenBuilder.class );
 	
@@ -28,24 +28,23 @@ public class ScreenBuilder implements GroovyObject
 		this.current = screen;
 	}
 	
-	protected void callClosure( Object current, Closure closure )
+	protected Object callClosure( Object current, Closure closure )
 	{
 		Object old = this.current;
 		this.current = current;
 		
 		closure.setDelegate( this );
-		closure.call();
+		closure.setResolveStrategy( Closure.DELEGATE_FIRST );
+		Object result = closure.call();
 		closure.setResolveStrategy( Closure.OWNER_ONLY );
 		
 		this.current = old;
+		return result;
 	}
 	
 	public Object call( Closure closure )
 	{
-		closure.setDelegate( this );
-		Object result = closure.call();
-		closure.setResolveStrategy( Closure.OWNER_ONLY );
-		return result;
+		return callClosure( this.screen, closure );
 	}
 
 	@Override
@@ -122,6 +121,8 @@ public class ScreenBuilder implements GroovyObject
 		Message status = (Message)args.remove( "status" );
 		Errors errors = (Errors)args.remove( "errors" );
 		Table table = new Table( name, (Composite)this.current, data, path, retrieve, update, args, status, errors );
+		Object title = args.remove( "title" );
+		table.title = title != null ? title.toString() : null;
 		
 		callClosure( table, closure );
 
@@ -208,7 +209,7 @@ public class ScreenBuilder implements GroovyObject
 	@Override
 	public void setProperty( String name, Object value )
 	{
-//		log.debug( "setting property [" + ( this.current != null ? this.current.getClass() : "null" ) + "][" + name + "] <- [" + ( value != null ? value.getClass() : "null" ) + "]" );
+		log.debug( "setting property [" + ( this.current != null ? this.current.getClass() : "null" ) + "][" + name + "] <- [" + ( value != null ? value.getClass() : "null" ) + "]" );
 		( (Composite)this.current ).childs.put( name, (Component)value );
 		( (Component)value ).name = name;
 //		InvokerHelper.setProperty( this.current.c, name, value );

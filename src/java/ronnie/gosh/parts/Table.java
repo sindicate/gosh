@@ -48,6 +48,7 @@ public class Table extends Composite
 	protected Message status;
 	protected Errors errors;
 	protected Map< String, String > unappliedRequestParameters;
+	protected String title;
 	
 	public Table( String name, Composite parent, DataObject data, String dataPath, Closure retrieve, Closure update, Map args, Message status, Errors errors )
 	{
@@ -74,6 +75,14 @@ public class Table extends Composite
 		PrintWriter out = context.getOut();
 		
 		out.print( "<table class=\"table\">\n" );
+		if( this.title != null )
+		{
+			out.print( "	<tr class=\"title\"><td colspan=\"" );
+			out.print( this.columns.size() );
+			out.print( "\">" );
+			out.print( this.title );
+			out.print( "</td></tr>\n" );
+		}
 		out.print( "	<tr class=\"row\">" );
 		for( Column column : this.columns )
 		{
@@ -176,7 +185,7 @@ public class Table extends Composite
 			i++;
 		}
 		out.print( "	<tr class=\"buttons\"><td colspan=\"" );
-		out.print( this.columns.size() + 1 );
+		out.print( this.columns.size() );
 		out.print( "\">" );
 		this.addButton.render( context );
 		out.print( " " );
