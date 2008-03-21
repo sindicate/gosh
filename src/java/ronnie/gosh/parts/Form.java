@@ -31,7 +31,7 @@ public class Form extends Composite
 	protected Closure retrieve;
 	protected Closure update;
 	protected Errors errors;
-	protected Data data;
+	protected DataObjectWrapper data;
 	protected String path;
 	protected Button updateButton;
 	protected String title;
@@ -58,7 +58,7 @@ public class Form extends Composite
 	
 	public void retrieve( Object... args )
 	{
-		this.data = new Data( (DataObject)this.retrieve.call( args ) );
+		this.data = new DataObjectWrapper( (DataObject)this.retrieve.call( args ) );
 		
 		// Retrieve select data
 		for( Value value : this.values )

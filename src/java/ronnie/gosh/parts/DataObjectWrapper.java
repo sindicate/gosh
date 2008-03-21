@@ -19,14 +19,14 @@ import commonj.sdo.DataObject;
 import commonj.sdo.Property;
 import commonj.sdo.Type;
 
-public class Data
+public class DataObjectWrapper
 {
-	static private final Logger log = Logger.getLogger( Data.class );
+	static private final Logger log = Logger.getLogger( DataObjectWrapper.class );
 
 	protected DataObject dataObject;
 	protected Map< String, String > shadow;
 	
-	public Data( DataObject dataObject )
+	public DataObjectWrapper( DataObject dataObject )
 	{
 		this.dataObject = dataObject;
 	}

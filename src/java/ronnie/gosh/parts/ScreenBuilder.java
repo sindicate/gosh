@@ -20,12 +20,24 @@ public class ScreenBuilder implements GroovyObject
 	static private final Logger log = Logger.getLogger( ScreenBuilder.class );
 	
 	protected ScreenSupport screen;
-	protected Composite current;
+	protected Object current;
 	
 	public ScreenBuilder( ScreenSupport screen )
 	{
 		this.screen = screen;
 		this.current = screen;
+	}
+	
+	protected void callClosure( Object current, Closure closure )
+	{
+		Object old = this.current;
+		this.current = current;
+		
+		closure.setDelegate( this );
+		closure.call();
+		closure.setResolveStrategy( Closure.OWNER_ONLY );
+		
+		this.current = old;
 	}
 	
 	public Object call( Closure closure )
@@ -56,16 +68,9 @@ public class ScreenBuilder implements GroovyObject
 		Closure retrieve = (Closure)args.remove( "retrieve" );
 		Closure update = (Closure)args.remove( "update" );
 		Errors errors = (Errors)args.remove( "errors" );
-		Form form = new Form( name, title != null ? title.toString() : null, this.current, path, retrieve, update, args, errors );
+		Form form = new Form( name, title != null ? title.toString() : null, (Composite)this.current, path, retrieve, update, args, errors );
 		
-		Composite old = this.current;
-		this.current = form;
-		
-		closure.setDelegate( this );
-		closure.call();
-		closure.setResolveStrategy( Closure.OWNER_ONLY );
-		
-		this.current = old;
+		callClosure( form, closure );
 
 		// TODO Check that values have been added
 		return form;
@@ -90,12 +95,12 @@ public class ScreenBuilder implements GroovyObject
 	
 	protected Message message()
 	{
-		return new Message( null, this.current );
+		return new Message( null, (Composite)this.current );
 	}
 
 	protected Errors errors()
 	{
-		return new Errors( null, this.current );
+		return new Errors( null, (Composite)this.current );
 	}
 
 	protected Button button( Map args )
@@ -103,7 +108,7 @@ public class ScreenBuilder implements GroovyObject
 		String name = (String)args.remove( "name" );
 		String type = (String)args.remove( "type" );
 		Closure clicked = (Closure)args.remove( "clicked" );
-		return new Button( name, this.current, type, clicked, args );
+		return new Button( name, (Composite)this.current, type, clicked, args );
 	}
 
 	// TODO Rename to datatable or something like that
@@ -116,16 +121,9 @@ public class ScreenBuilder implements GroovyObject
 		Closure update = (Closure)args.remove( "update" );
 		Message status = (Message)args.remove( "status" );
 		Errors errors = (Errors)args.remove( "errors" );
-		Table table = new Table( name, this.current, data, path, retrieve, update, args, status, errors );
+		Table table = new Table( name, (Composite)this.current, data, path, retrieve, update, args, status, errors );
 		
-		Composite old = this.current;
-		this.current = table;
-		
-		closure.setDelegate( this );
-		closure.call();
-		closure.setResolveStrategy( Closure.OWNER_ONLY );
-		
-		this.current = old;
+		callClosure( table, closure );
 
 		// TODO Check that columns have been added
 		return table;
@@ -144,6 +142,43 @@ public class ScreenBuilder implements GroovyObject
 		column.select = select;
 		Boolean mandatory = (Boolean)args.get( "mandatory" );
 		column.mandatory = mandatory != null ? mandatory : false;
+
+		Table table = (Table)this.current;
+		table.addColumn( column );
+		return column;
+	}
+	
+	protected Column column( Closure closure )
+	{
+		Column column = new Column();
+
+		callClosure( column, closure );
+
+		Table table = (Table)this.current;
+		table.addColumn( column );
+		return column;
+	}
+	
+	protected Link link( Map args )
+	{
+		Link link = new Link();
+		link.text = (String)args.remove( "text" );
+		link.args = args;
+
+		Column column = (Column)this.current;
+		column.addLink( link );
+		return link;		
+	}
+	
+	protected Data data( String path )
+	{
+		return new Data( path );
+	}
+	
+	protected Column delete()
+	{
+		Column column = new Column();
+		column.delete = true;
 
 		Table table = (Table)this.current;
 		table.addColumn( column );
@@ -174,7 +209,7 @@ public class ScreenBuilder implements GroovyObject
 	public void setProperty( String name, Object value )
 	{
 //		log.debug( "setting property [" + ( this.current != null ? this.current.getClass() : "null" ) + "][" + name + "] <- [" + ( value != null ? value.getClass() : "null" ) + "]" );
-		this.current.childs.put( name, (Component)value );
+		( (Composite)this.current ).childs.put( name, (Component)value );
 		( (Component)value ).name = name;
 //		InvokerHelper.setProperty( this.current.c, name, value );
 //		throw new NotImplementedException();

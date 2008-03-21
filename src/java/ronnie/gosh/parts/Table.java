@@ -4,6 +4,7 @@ import groovy.lang.Closure;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -26,10 +27,17 @@ public class Table extends Composite
 		protected Select select;
 		protected List<DataObject> selectData;
 		protected boolean mandatory;
+		protected List things = new ArrayList();
+		protected boolean delete;
+		
+		public void addLink( Link link )
+		{
+			this.things.add( link );
+		}
 	}
 
 	protected List< Column > columns;
-	protected Data data;
+	protected DataObjectWrapper data;
 	protected String dataPath;
 	protected Closure retrieve;
 	protected Closure update;
@@ -46,7 +54,7 @@ public class Table extends Composite
 		super( name, parent );
 		
 		this.columns = new ArrayList();
-		this.data = new Data( data );
+		this.data = new DataObjectWrapper( data );
 		this.dataPath = dataPath;
 		this.update = update;
 		this.retrieve = retrieve;
@@ -73,7 +81,6 @@ public class Table extends Composite
 			print( context, out, column.header );
 			out.print( "</th>" );
 		}
-		out.print( "<th/>" );
 		out.print( "</tr>\n" );
 		List<DataObject> data = this.data.dataObject.getList( this.dataPath );
 		int i = 1;
@@ -85,58 +92,85 @@ public class Table extends Composite
 			out.print( "	<tr class=\"row\">\n" );
 			for( Column column : this.columns )
 			{
-				String fieldPath = rowPath + column.path;
-				Object value;
-				if( shadow != null && shadow.containsKey( fieldPath ) )
-					value = shadow.get( fieldPath );
-				else
-					value = row.get( column.path );
-				
-				if( column.edit )
+				if( column.path != null )
 				{
-					out.print( "		<td class=\"edit\">" );
-					if( column.select != null )
+					String fieldPath = rowPath + column.path;
+					Object value;
+					if( shadow != null && shadow.containsKey( fieldPath ) )
+						value = shadow.get( fieldPath );
+					else
+						value = row.get( column.path );
+					
+					if( column.edit )
 					{
-						out.print( "<select name=\"" );
-						out.print( path );
-						out.print( fieldPath );
-						out.print( "\">" );
-						if( value == null )
-							out.print( "<option value=\"\" selected=\"selected\">(select)</option>" );
-						for( DataObject object : column.selectData )
+						out.print( "		<td class=\"edit\">" );
+						if( column.select != null )
 						{
-							out.print( "<option value=\"" );
-							Object key = object.get( column.select.key ); 
-							out.print( key );
-							if( value != null && key.equals( value ) )
-								out.print( "\" selected=\"selected\">" );
-							else
-								out.print( "\">" );
-							out.print( object.get( column.select.display ) );
-							out.print( "</option>" );
+							out.print( "<select name=\"" );
+							out.print( path );
+							out.print( fieldPath );
+							out.print( "\">" );
+							if( value == null )
+								out.print( "<option value=\"\" selected=\"selected\">(select)</option>" );
+							for( DataObject object : column.selectData )
+							{
+								out.print( "<option value=\"" );
+								Object key = object.get( column.select.key ); 
+								out.print( key );
+								if( value != null && key.equals( value ) )
+									out.print( "\" selected=\"selected\">" );
+								else
+									out.print( "\">" );
+								out.print( object.get( column.select.display ) );
+								out.print( "</option>" );
+							}
+							out.print( "</select>" );
 						}
-						out.print( "</select>" );
+						else
+						{
+							out.print( "<input name=\"" );
+							out.print( path );
+							out.print( fieldPath );
+							out.print( "\" value=\"" );
+							print( context, out, value );
+							out.print( "\"/>" );
+						}
 					}
 					else
 					{
-						out.print( "<input name=\"" );
-						out.print( path );
-						out.print( fieldPath );
-						out.print( "\" value=\"" );
+						out.print( "		<td>" );
 						print( context, out, value );
-						out.print( "\"/>" );
 					}
+				}
+				else if( column.delete )
+				{
+					out.print( "		<td class=\"edit\">" );
+					this.removeButton.render( context, Integer.toString( i ) );
 				}
 				else
 				{
+					// TODO Implement interface Renderable
 					out.print( "		<td>" );
-					print( context, out, value );
+					for( Object child : column.things )
+					{
+						if( child instanceof Link )
+						{
+							Link link = (Link)child;
+							Map< String, Object > args = new HashMap( link.args );
+							// TODO Link should render itself
+							for( Map.Entry entry : args.entrySet() )
+								if( entry.getValue() instanceof Closure )
+									entry.setValue( ( (Closure)entry.getValue() ).call( row ) );
+							out.print( "<a href=\"" );
+							out.print( context.link( new HashMap( args ) ) );
+							out.print( "\">" );
+							out.print( context.encode( link.text ) );
+							out.print( "</a>" );
+						}
+					}
 				}
 				out.print( "</td>\n" );
 			}
-			out.print( "		<td class=\"edit\">" );
-			this.removeButton.render( context, Integer.toString( i ) );
-			out.print( "</td>\n" );
 			out.print( "	</tr>\n" );
 			
 			i++;
@@ -171,7 +205,7 @@ public class Table extends Composite
 	
 	public void retrieve()
 	{
-		this.data = new Data( (DataObject)this.retrieve.call() );
+		this.data = new DataObjectWrapper( (DataObject)this.retrieve.call() );
 		
 		// Retrieve select data
 		for( Column column : this.columns )

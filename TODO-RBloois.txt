@@ -47,6 +47,8 @@ NOT	Compile time tag replacement
 		Should templates also work without the call to fragment()? (body only)
 		Automatic log field
 		stacktrace on screen does not work correctly if response is already committed.
+		Screens: use 'value' for tables
+		Builder cascading
 
 DONE	Remove the script superclass from the ghtml's
 DONE	Rename .gsp to .ghtml
