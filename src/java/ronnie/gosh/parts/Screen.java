@@ -1,9 +1,8 @@
 package ronnie.gosh.parts;
 
-import groovy.lang.GroovyObject;
 import ronnie.gosh.RequestContext;
 
-public interface Screen extends GroovyObject
+public interface Screen
 {
 	void init( RequestContext context );
 	void call( RequestContext context );

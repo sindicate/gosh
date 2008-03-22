@@ -53,12 +53,6 @@ public class ScreenBuilder implements GroovyInterceptable
 		return InvokerHelper.getMetaClass( getClass() );
 	}
 
-	@Override
-	public Object getProperty( String name )
-	{
-		return getMetaClass().getProperty( this, name );
-	}
-	
 	protected Form form( Map args, Closure closure )
 	{
 		String name = (String)args.remove( "name" );
@@ -171,11 +165,6 @@ public class ScreenBuilder implements GroovyInterceptable
 		return link;		
 	}
 	
-	protected Data data( String path )
-	{
-		return new Data( path );
-	}
-	
 	protected Column delete()
 	{
 		Column column = new Column();
@@ -207,9 +196,16 @@ public class ScreenBuilder implements GroovyInterceptable
 	}
 
 	@Override
+	public Object getProperty( String name )
+	{
+		log.debug( "getProperty [" + ( this.current != null ? this.current.getClass() : "null" ) + "][" + name + "]" );
+		return ( (Composite)this.current ).childs.get( name );
+	}
+	
+	@Override
 	public void setProperty( String name, Object value )
 	{
-		log.debug( "setting property [" + ( this.current != null ? this.current.getClass() : "null" ) + "][" + name + "] <- [" + ( value != null ? value.getClass() : "null" ) + "]" );
+		log.debug( "setProperty [" + ( this.current != null ? this.current.getClass() : "null" ) + "][" + name + "] <- [" + ( value != null ? value.getClass() : "null" ) + "]" );
 		( (Composite)this.current ).childs.put( name, (Component)value );
 		( (Component)value ).name = name;
 //		InvokerHelper.setProperty( this.current.c, name, value );

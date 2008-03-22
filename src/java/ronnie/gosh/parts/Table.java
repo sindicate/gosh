@@ -206,7 +206,7 @@ public class Table extends Composite
 	
 	public void update()
 	{
-		this.update.call( new Object[] { this.data } );
+		this.update.call( new Object[] { this.data.dataObject } );
 		retrieve();
 		if( this.status != null )
 			this.status.setMessage( "rows updated" );

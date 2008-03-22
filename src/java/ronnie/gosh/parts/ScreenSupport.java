@@ -1,7 +1,6 @@
 package ronnie.gosh.parts;
 
 import groovy.lang.Closure;
-import groovy.lang.GroovyObject;
 import groovy.lang.MetaProperty;
 import groovy.lang.MissingPropertyException;
 
@@ -13,6 +12,7 @@ import java.util.Map.Entry;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import ronnie.gosh.RequestContext;
 
@@ -20,7 +20,7 @@ import com.logicacmg.idt.commons.util.Assert;
 
 
 // TODO Need part builder
-abstract public class ScreenSupport extends Composite implements Screen, GroovyObject
+abstract public class ScreenSupport extends Composite implements Screen
 {
 	static private Logger log = Logger.getLogger( ScreenSupport.class );
 	
@@ -36,7 +36,7 @@ abstract public class ScreenSupport extends Composite implements Screen, GroovyO
 	{
 		build();
 		
-		MetaProperty property = getMetaClass().hasProperty( this, "build" );
+		MetaProperty property = InvokerHelper.getMetaClass( this ).hasProperty( this, "build" );
 		if( property != null )
 		{
 			Closure closure = (Closure)property.getProperty( this );
@@ -123,6 +123,8 @@ abstract public class ScreenSupport extends Composite implements Screen, GroovyO
 	@Override
 	public void render( RequestContext context )
 	{
+		Assert.notNull( context );
+		
 		HttpServletResponse response = this.context.getResponse();
 		
 		// no-store is the one that prevents back-button caching, no-cache has nothing to do with it.
@@ -130,7 +132,7 @@ abstract public class ScreenSupport extends Composite implements Screen, GroovyO
 		response.setHeader( "Cache-Control", "no-cache" ); // Needed for IE6
 		response.setHeader( "Cache-Control", "no-store" ); // no-store prevents back-button caching in both IE7 and Firefox
 
-		Closure closure = (Closure)getProperty( "render" );
+		Closure closure = (Closure)InvokerHelper.getProperty( this, "render" );
 		if( closure != null )
 		{
 			closure.setDelegate( context );
@@ -177,7 +179,7 @@ abstract public class ScreenSupport extends Composite implements Screen, GroovyO
 	{
 		try
 		{
-			Closure closure = (Closure)getProperty( "applyRequestStart" );
+			Closure closure = (Closure)InvokerHelper.getProperty( this, "applyRequestStart" );
 			closure.setDelegate( context );
 			closure.call();
 		}
