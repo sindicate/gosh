@@ -51,6 +51,7 @@ NOT	Compile time tag replacement
 		Screens: Builder cascading
 		params.addTypes( id: Integer ) instead of strings
 		Screens: Need to store querystring to detect url changes
+		Subsessions
 
 DONE	Remove the script superclass from the ghtml's
 DONE	Rename .gsp to .ghtml

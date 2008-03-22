@@ -2,7 +2,6 @@ package ronnie.gosh.parts;
 
 import groovy.lang.Closure;
 import groovy.lang.MetaProperty;
-import groovy.lang.MissingPropertyException;
 
 import java.io.PrintWriter;
 import java.util.Collections;
@@ -20,11 +19,12 @@ import com.logicacmg.idt.commons.util.Assert;
 
 
 // TODO Need part builder
-abstract public class ScreenSupport extends Composite implements Screen
+public class ScreenSupport extends Composite implements Screen
 {
 	static private Logger log = Logger.getLogger( ScreenSupport.class );
 	
 	protected RequestContext context;
+	protected String myUrl;
 //	protected boolean rendered;
 	
 	public ScreenSupport()
@@ -34,80 +34,85 @@ abstract public class ScreenSupport extends Composite implements Screen
 	
 	public void init( RequestContext context )
 	{
-		build();
-		
-		MetaProperty property = InvokerHelper.getMetaClass( this ).hasProperty( this, "build" );
-		if( property != null )
-		{
-			Closure closure = (Closure)property.getProperty( this );
-			closure.setDelegate( context );
-			closure.call();
-		}
+		context.storeScreen( this.name, this );
+		this.myUrl = context.link( null );
 	}
 	
+	@Override
+	public CANACCEPT canAccept( RequestContext context )
+	{
+		if( !context.getRequest().getRequestURI().equals( this.myUrl ) )
+			return CANACCEPT.NEW;
+		return CANACCEPT.YES;
+	}
+
 	public void build()
 	{
-		//
+		callHook( "build" );
 	}
 
 	// TODO This can be non-public?
 	// TODO Use the referer to detect if a refresh is needed?
 	// TODO synchronize on the session
-	public void call( RequestContext context )
+	synchronized public void call( RequestContext context )
 	{
 		this.context = context;
-
-		if( "open".equals( context.getActionName() ) )
-		{
-			close();
-			// TODO Create automated test or assertion to test the a new screen has not been set in the session yet
-			context.redirect( null );
-			return;
-		}
 		
-		// TODO Can't execute an action when the screen has just been build?
-		
-		String action = null;
-		Map< String, String[] > pars = context.getRequest().getParameterMap();
-		for( Entry< String, String[] > entry : pars.entrySet() )
+		if( context.getRequest().getMethod().equals( "POST" ) )
 		{
-			String name = entry.getKey();
-			if( name.startsWith( "action(" ) && name.endsWith( ")" ) )
+			log.debug( "POST" );
+			// TODO Can't execute an action when the screen has just been build?
+			
+			String action = null;
+			Map< String, String[] > pars = context.getRequest().getParameterMap();
+			for( Entry< String, String[] > entry : pars.entrySet() )
 			{
-				action = name;
-				break;
+				String name = entry.getKey();
+				if( name.startsWith( "action(" ) && name.endsWith( ")" ) )
+				{
+					action = name;
+					break;
+				}
 			}
-		}
-
-		// Without an action it must be a redirect, only applyRequest() when an action is submitted
-		if( action != null )
-		{
+			
+			Assert.notNull( action, "Missing action" );
 			log.debug( "Action: " + action );
 			
 			applyRequest( context );
 
 			if( !context.hasErrors() )
-			{
-				action = action.substring( 7, action.length() - 1 );
-				int pos = action.indexOf( '.' );
-				Assert.isTrue( pos > 0 );
-				String child = action.substring( 0, pos );
-				action = action.substring( pos + 1 );
-				Component component = this.childs.get( child );
-				component.call( action );
-			}
+				callAction( action );
 
 			if( context.hasErrors() )
 				requestFailed( context );
+			
+			if( context.executePlannedRedirect() )
+				return;
+
+			context.redirect( null );
+			return;
 		}
 		
-		if( context.executePlannedRedirect() )
-			return;
-
-		if( "POST".equals( context.getRequest().getMethod() ) )
+		if( !context.getRequest().getRequestURI().equals( this.myUrl ) )
+		{
+			log.debug( "Not base url" );
+			build();
 			context.redirect( null );
+			return;
+		}
 		
 		render( context );
+	}
+	
+	protected void callAction( String action )
+	{
+		action = action.substring( 7, action.length() - 1 );
+		int pos = action.indexOf( '.' );
+		Assert.isTrue( pos > 0 );
+		String child = action.substring( 0, pos );
+		action = action.substring( pos + 1 );
+		Component component = this.childs.get( child );
+		component.call( action );
 	}
 	
 	protected void requestApplied()
@@ -132,21 +137,16 @@ abstract public class ScreenSupport extends Composite implements Screen
 		response.setHeader( "Cache-Control", "no-cache" ); // Needed for IE6
 		response.setHeader( "Cache-Control", "no-store" ); // no-store prevents back-button caching in both IE7 and Firefox
 
-		Closure closure = (Closure)InvokerHelper.getProperty( this, "render" );
-		if( closure != null )
-		{
-			closure.setDelegate( context );
-			closure.call();
-		}
+		callHook( "render" );
 	}
 	
 	public void close()
 	{
 		Assert.notNull( this.context );
 		Assert.notNull( this.context.getSession() );
-		log.debug( "closed [" + this.context.getControllerName() + "]" );
+		log.debug( "closed [" + this.name + "]" );
 		// TODO Need to implement a screenmanager for this
-		this.context.clearScreen( this.context.getControllerName() );
+		this.context.clearScreen( this.name );
 	}
 	
 	@Override
@@ -177,17 +177,18 @@ abstract public class ScreenSupport extends Composite implements Screen
 	@Override
 	public void applyRequest( RequestContext context )
 	{
-		try
+		callHook( "applyRequestStart" );
+		super.applyRequest( context );
+	}
+
+	protected void callHook( String name )
+	{
+		MetaProperty property = InvokerHelper.getMetaClass( this ).hasProperty( this, name );
+		if( property != null )
 		{
-			Closure closure = (Closure)InvokerHelper.getProperty( this, "applyRequestStart" );
-			closure.setDelegate( context );
+			Closure closure = (Closure)property.getProperty( this );
+			closure.setDelegate( this.context );
 			closure.call();
 		}
-		catch( MissingPropertyException e )
-		{
-			// ignore
-		}
-
-		super.applyRequest( context );
 	}
 }

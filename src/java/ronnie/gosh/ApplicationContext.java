@@ -79,17 +79,23 @@ public class ApplicationContext implements BeanFactoryAware
 		Screen screen = context.getScreen( controllerName );
 		if( screen != null )
 		{
-			screen.call( context );
-			return;
+			if( screen.canAccept( context ) == Screen.CANACCEPT.YES )
+			{
+				screen.call( context );
+				return;
+			}
+			context.clearScreen( controllerName );
 		}
 		
+		// TODO Synchronize on session
 		// Is it a screen?
 		screen = getScreen( controllerName );
 		if( screen != null )
 		{
+			screen.setName( controllerName );
 			context.createSession(); // storeScreen may fail otherwise
 			screen.init( context );
-			screen.call( context ); // Before setting the attribute, this prevents the screen itself from removing itself in case of the "open" action
+			screen.call( context );
 			context.storeScreen( controllerName, screen );
 			return;
 		}
