@@ -9,15 +9,16 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.apache.tuscany.das.rdb.config.impl.ResultDescriptorImpl;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 
 import com.logicacmg.idt.commons.util.Assert;
 
-public class GoshHibernateDaoSupport extends HibernateDaoSupport
+public class GoshDataAccessSupport extends HibernateDaoSupport
 {
-	static final private Logger log = Logger.getLogger( GoshHibernateDaoSupport.class ); 
+	static final private Logger log = Logger.getLogger( GoshDataAccessSupport.class ); 
 
 	@SuppressWarnings("deprecation")
 	public Connection getConnection()
@@ -96,5 +97,14 @@ public class GoshHibernateDaoSupport extends HibernateDaoSupport
 		for( Object arg : args )
 			query.setParameter( i++, arg );
 		return query.uniqueResult();
+	}
+	
+	static protected void addFieldDescriptor( List descriptor, String table, String column, String type )
+	{
+		ResultDescriptorImpl fieldDescriptor = new ResultDescriptorImpl();
+		fieldDescriptor.setTableName( table );
+		fieldDescriptor.setColumnName( column );
+		fieldDescriptor.setColumnType( type );
+		descriptor.add( fieldDescriptor );
 	}
 }

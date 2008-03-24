@@ -25,7 +25,7 @@ public class ScreenSupport extends Composite implements Screen
 	
 	protected RequestContext context;
 	protected String myUrl;
-//	protected boolean rendered;
+	protected boolean built;
 	
 	public ScreenSupport()
 	{
@@ -34,7 +34,7 @@ public class ScreenSupport extends Composite implements Screen
 	
 	public void init( RequestContext context )
 	{
-		context.storeScreen( this.name, this );
+//		context.storeScreen( this.name, this );
 		this.myUrl = context.link( null );
 	}
 	
@@ -97,8 +97,16 @@ public class ScreenSupport extends Composite implements Screen
 		{
 			log.debug( "Not base url" );
 			build();
+			this.built = true;
 			context.redirect( null );
 			return;
+		}
+		
+		if( !this.built )
+		{
+			log.debug( "Not built yet" );
+			build();
+			this.built = true;
 		}
 		
 		render( context );

@@ -80,21 +80,24 @@ public class DataObjectWrapper
 					this.shadow.put( path, value );
 					return;
 				}
+			else if( type.getName().equals( "Boolean" ) )
+				v = toBoolean( value );
 			else
 				v = value;
 
 			Object old = this.dataObject.get( path );
+			log.debug( "old: " + ( old != null ? old.getClass() : "null" ) );
 			if( v == null )
 			{
 				if( old != null )
-				{
-					log.debug( "  set [" + path + "] = [" + old + "] <- [" + v + "]" );
-					accessor.set( v );
-				}
+					if( !( old instanceof String && ( (String)old ).length() == 0 ) )
+					{
+						log.debug( "  set [" + path + "] = [" + old + "] <- [" + v + "]" );
+						accessor.set( v );
+					}
 			}
 			else if( !v.equals( old ) )
 			{
-				log.debug( "old: " + ( old != null ? old.getClass() : "null" ) );
 				log.debug( "new: " + v.getClass() );
 				log.debug( "  set [" + path + "] = [" + old + "] <- [" + v + "]" );
 				accessor.set( v );
@@ -111,6 +114,13 @@ public class DataObjectWrapper
 		if( value == null )
 			return null;
 		return Integer.valueOf( value );
+	}
+	
+	static protected Boolean toBoolean( String value ) throws NumberFormatException
+	{
+		if( value == null )
+			return null;
+		return Boolean.valueOf( value );
 	}
 	
 	static protected Date toDate( String value ) throws ParseException

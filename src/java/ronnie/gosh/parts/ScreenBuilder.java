@@ -137,6 +137,8 @@ public class ScreenBuilder implements GroovyInterceptable
 		column.select = select;
 		Boolean mandatory = (Boolean)args.get( "mandatory" );
 		column.mandatory = mandatory != null ? mandatory : false;
+		Boolean checkbox = (Boolean)args.get( "checkbox" );
+		column.checkbox = checkbox != null ? checkbox : false;
 
 		Table table = (Table)this.current;
 		table.addColumn( column );

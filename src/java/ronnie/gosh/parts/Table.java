@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.log4j.Logger;
+
 import ronnie.gosh.RequestContext;
 
 import com.logicacmg.idt.commons.util.Assert;
@@ -16,7 +18,7 @@ import commonj.sdo.DataObject;
 
 public class Table extends Composite
 {
-//	static private final Logger log = Logger.getLogger( Table.class );
+	static private final Logger log = Logger.getLogger( Table.class );
 
 	static public class Column
 	{
@@ -29,6 +31,7 @@ public class Table extends Composite
 		protected boolean mandatory;
 		protected List things = new ArrayList();
 		protected boolean delete;
+		protected boolean checkbox; // TODO Change to type, inherit from SDO
 		
 		public void addLink( Link link )
 		{
@@ -109,6 +112,7 @@ public class Table extends Composite
 						value = shadow.get( fieldPath );
 					else
 						value = row.get( column.path );
+					log.debug( "value: " + ( value == null ? "(null)" : value.getClass() ) );
 					
 					if( column.edit )
 					{
@@ -134,6 +138,16 @@ public class Table extends Composite
 								out.print( "</option>" );
 							}
 							out.print( "</select>" );
+						}
+						else if( column.checkbox )
+						{
+							out.print( "<input type=\"checkbox\" name=\"" );
+							out.print( path );
+							out.print( fieldPath );
+							out.print( "\" value=\"true\"" ); // TODO If checkbox is unchecked, we don't get a value
+							if( value != null && ( (Boolean)value ).booleanValue() )
+								out.print( " checked=\"checked\"" );
+							out.print( "/>" );
 						}
 						else
 						{
