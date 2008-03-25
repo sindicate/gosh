@@ -117,6 +117,10 @@ public class ScreenBuilder implements GroovyInterceptable
 		Table table = new Table( name, (Composite)this.current, data, path, retrieve, update, args, status, errors );
 		Object title = args.remove( "title" );
 		table.title = title != null ? title.toString() : null;
+		Closure rowAdded = (Closure)args.remove( "rowAdded" );
+		table.rowAdded = rowAdded;
+		Boolean timestamp = (Boolean)args.get( "timestamp" );
+		table.timestamp = timestamp != null ? timestamp : false;
 		
 		callClosure( table, closure );
 

@@ -52,6 +52,8 @@ public class Table extends Composite
 	protected Errors errors;
 	protected Map< String, String > unappliedRequestParameters;
 	protected String title;
+	protected Closure rowAdded;
+	protected boolean timestamp;
 	
 	public Table( String name, Composite parent, DataObject data, String dataPath, Closure retrieve, Closure update, Map args, Message status, Errors errors )
 	{
@@ -228,7 +230,7 @@ public class Table extends Composite
 	
 	public void retrieve()
 	{
-		this.data = new DataObjectWrapper( (DataObject)this.retrieve.call() );
+		this.data = (DataObjectWrapper)this.retrieve.call();
 		
 		// Retrieve select data
 		for( Column column : this.columns )
@@ -265,7 +267,10 @@ public class Table extends Composite
 
 	public DataObject addRow()
 	{
-		return this.data.dataObject.createDataObject( this.dataPath );
+		DataObject row = this.data.dataObject.createDataObject( this.dataPath );
+		if( this.rowAdded != null )
+			this.rowAdded.call( row );
+		return row;
 	}
 	
 	public int getRowCount()

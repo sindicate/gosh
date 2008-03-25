@@ -6,7 +6,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.apache.tuscany.sdo.util.DataObjectUtil;
@@ -15,6 +17,7 @@ import org.eclipse.emf.ecore.EObject;
 
 import ronnie.gosh.RequestContext;
 
+import com.logicacmg.idt.commons.util.Assert;
 import commonj.sdo.DataObject;
 import commonj.sdo.Property;
 import commonj.sdo.Type;
@@ -25,6 +28,7 @@ public class DataObjectWrapper
 
 	protected DataObject dataObject;
 	protected Map< String, String > shadow;
+	protected Set< String > timestamps = new HashSet< String >();
 	
 	public DataObjectWrapper( DataObject dataObject )
 	{
@@ -42,33 +46,10 @@ public class DataObjectWrapper
 		{
 			Property property = accessor.getProperty();
 			Type type = property.getType();
-			// TODO Better type checking
 			Object v;
-			if( type.getName().equals( "IntObject" ) )
-				try
-				{
-					v = toInteger( value );
-				}
-				catch( NumberFormatException e )
-				{
-					context.addError( "'" + value + "' could not be converted to a integer" );
-					log.debug( "put in shadow: [" + path + "] = [" + value + "]" );
-					this.shadow.put( path, value );
-					return;
-				}
-			else if( type.getName().equals( "Date" ) )
-				try
-				{
-					v = toDate( value );
-				}
-				catch( ParseException e )
-				{
-					context.addError( "'" + value + "' could not be converted to a timestamp" );
-					log.debug( "put in shadow: [" + path + "] = [" + value + "]" );
-					this.shadow.put( path, value );
-					return;
-				}
-			else if( type.getName().equals( "Timestamp" ) )
+			if( this.timestamps.contains( property.getName() ) )
+			{
+				Assert.isTrue( type.getName().equals( "Date" ) );
 				try
 				{
 					v = toTimestamp( value );
@@ -80,10 +61,26 @@ public class DataObjectWrapper
 					this.shadow.put( path, value );
 					return;
 				}
-			else if( type.getName().equals( "Boolean" ) )
-				v = toBoolean( value );
+			}
 			else
-				v = value;
+			{
+				if( type.getName().equals( "Int" ) )
+					try
+					{
+						v = toInteger( value );
+					}
+					catch( NumberFormatException e )
+					{
+						context.addError( "'" + value + "' could not be converted to a integer" );
+						log.debug( "put in shadow: [" + path + "] = [" + value + "]" );
+						this.shadow.put( path, value );
+						return;
+					}
+				else if( type.getName().equals( "Boolean" ) )
+					v = toBoolean( value );
+				else
+					v = value;
+			}
 
 			Object old = this.dataObject.get( path );
 			log.debug( "old: " + ( old != null ? old.getClass() : "null" ) );
@@ -142,5 +139,10 @@ public class DataObjectWrapper
 	public void clearShadow()
 	{
 		this.shadow = new HashMap();
+	}
+	
+	public void setTimestamp( String name )
+	{
+		this.timestamps.add( name );
 	}
 }
