@@ -5,8 +5,10 @@ import groovy.lang.Closure;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
@@ -75,8 +77,6 @@ public class Table extends Composite
 	@Override
 	public void render( RequestContext context )
 	{
-		// TODO Get the complete path instead of only the name
-
 		PrintWriter out = context.getOut();
 		
 		out.print( "<table class=\"table\">\n" );
@@ -241,6 +241,32 @@ public class Table extends Composite
 			this.status.setMessage( getRowCount() + " rows retrieved" );
 	}
 	
+	public Set< String > collectCheckedCheckBoxes()
+	{
+		Set< String > result = new HashSet< String >();
+		
+		List< DataObject > data = this.data.dataObject.getList( this.dataPath );
+		int i = 1;
+		for( DataObject row : data )
+		{
+			String rowPath = this.dataPath + "[" + i + "]/";
+			for( Column column : this.columns )
+				if( column.path != null )
+					if( column.edit && column.checkbox )
+					{
+						Object value = row.get( column.path );
+						if( value != null && ( (Boolean)value ).booleanValue() )
+						{
+							result.add( rowPath + column.path );
+							log.debug( "Collected checkbox [" + rowPath + column.path + "]" );
+						}
+					}
+			i++;
+		}
+		
+		return result;
+	}
+
 	@Override
 	public void applyRequest( RequestContext context )
 	{
@@ -248,20 +274,30 @@ public class Table extends Composite
 
 		this.data.clearShadow();
 		
-		String path = getPath() + ".";
+		Set< String > checked = collectCheckedCheckBoxes();
+		
+		String prefix = getPath() + ".";
 		
 		Map< String, String[] > pars = context.getRequest().getParameterMap();
 		for( Entry< String, String[] > entry : pars.entrySet() )
 		{
 			String name = entry.getKey();
-			if( name.startsWith( path ) )
+			if( name.startsWith( prefix ) )
 			{
 				// TODO Use another marker for this?
-				String prop = name.substring( path.length() );
+				String prop = name.substring( prefix.length() );
 				String[] values = entry.getValue();
 				Assert.isTrue( values.length == 1 );
 				this.data.set( prop, values[ 0 ], context );
+				checked.remove( prop ); // Remove from checked list
 			}
+		}
+		
+		// What remains are the previously checked checkboxes that are now not checked anymore
+		for( String path : checked )
+		{
+			log.debug( "Unchecking checkbox [" + path + "]" );
+			this.data.set( path, "false", context );
 		}
 	}
 
