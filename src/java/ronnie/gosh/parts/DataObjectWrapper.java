@@ -128,6 +128,11 @@ public class DataObjectWrapper
 		return parser.parse( value );
 	}
 	
+	public DataObject getDataObject()
+	{
+		return this.dataObject;
+	}
+
 	static protected Timestamp toTimestamp( String value ) throws ParseException
 	{
 		if( value == null )
