@@ -64,7 +64,8 @@ public class DataObjectWrapper
 			}
 			else
 			{
-				if( type.getName().equals( "Int" ) )
+				log.debug( "Converting [" + path + "] to [" + type.getName() + "]" );
+				if( type.getName().equals( "Int" ) || type.getName().equals( "IntObject" ) )
 					try
 					{
 						v = toInteger( value );
