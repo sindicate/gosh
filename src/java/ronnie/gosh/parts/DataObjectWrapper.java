@@ -15,8 +15,6 @@ import org.apache.tuscany.sdo.util.DataObjectUtil;
 import org.apache.tuscany.sdo.util.DataObjectUtil.Accessor;
 import org.eclipse.emf.ecore.EObject;
 
-import ronnie.gosh.RequestContext;
-
 import com.logicacmg.idt.commons.util.Assert;
 import commonj.sdo.DataObject;
 import commonj.sdo.Property;
@@ -28,6 +26,7 @@ public class DataObjectWrapper
 
 	protected DataObject dataObject;
 	protected Map< String, String > shadow;
+	protected Set< String > errors;
 	protected Set< String > timestamps = new HashSet< String >();
 	
 	public DataObjectWrapper( DataObject dataObject )
@@ -35,7 +34,7 @@ public class DataObjectWrapper
 		this.dataObject = dataObject;
 	}
 	
-	public void set( String path, String value, RequestContext context )
+	public void set( String path, String value, boolean mandatory, String name )
 	{
 		if( value != null && value.length() == 0 )
 			value = null;
@@ -56,7 +55,7 @@ public class DataObjectWrapper
 				}
 				catch( ParseException e )
 				{
-					context.addError( "'" + value + "' could not be converted to a timestamp" );
+					this.errors.add( "'" + value + "' could not be converted to a timestamp" );
 					log.debug( "put in shadow: [" + path + "] = [" + value + "]" );
 					this.shadow.put( path, value );
 					return;
@@ -72,7 +71,7 @@ public class DataObjectWrapper
 					}
 					catch( NumberFormatException e )
 					{
-						context.addError( "'" + value + "' could not be converted to a integer" );
+						this.errors.add( "'" + value + "' could not be converted to an integer" );
 						log.debug( "put in shadow: [" + path + "] = [" + value + "]" );
 						this.shadow.put( path, value );
 						return;
@@ -91,7 +90,13 @@ public class DataObjectWrapper
 					if( !( old instanceof String && ( (String)old ).length() == 0 ) )
 					{
 						log.debug( "  set [" + path + "] = [" + old + "] <- [" + v + "]" );
-						accessor.set( v );
+						if( mandatory )
+						{
+							this.errors.add( "Missing value for " + name );
+							this.shadow.put( path, value );
+						}
+						else
+							accessor.set( v );
 					}
 			}
 			else if( !v.equals( old ) )
@@ -142,8 +147,9 @@ public class DataObjectWrapper
 		return new Timestamp( parser.parse( value ).getTime() );
 	}
 
-	public void clearShadow()
+	public void clearErrors()
 	{
+		this.errors = new HashSet();
 		this.shadow = new HashMap();
 	}
 	

@@ -79,11 +79,21 @@ public class ApplicationContext implements BeanFactoryAware
 		Screen screen = context.getScreen( controllerName );
 		if( screen != null )
 		{
-			if( screen.canAccept( context ) == Screen.CANACCEPT.YES )
+			log.debug( "Found existing screen for [" + controllerName + "]" );
+			Screen.CANACCEPT canAccept = screen.canAccept( context ); 
+			log.debug( "  canAccept = [" + canAccept + "]" );
+			if( canAccept == Screen.CANACCEPT.YES )
 			{
+				log.debug( "  calling screen" );
 				screen.call( context );
 				return;
 			}
+			if( canAccept == Screen.CANACCEPT.ERROR )
+			{
+				log.debug( "  error with accepting" );
+				return;
+			}
+			log.debug( "  clearing screen" );
 			context.clearScreen( controllerName );
 		}
 		
@@ -92,11 +102,22 @@ public class ApplicationContext implements BeanFactoryAware
 		screen = getScreen( controllerName );
 		if( screen != null )
 		{
+			log.debug( "Found screen for [" + controllerName + "]" );
 			screen.setName( controllerName );
+			screen.init( context ); // Sets myURL
 			context.createSession(); // storeScreen may fail otherwise
-			screen.init( context );
-			screen.call( context );
 			context.storeScreen( controllerName, screen );
+
+			Screen.CANACCEPT canAccept = screen.canAccept( context ); 
+			log.debug( "  canAccept = [" + canAccept + "]" );
+			if( canAccept == Screen.CANACCEPT.YES )
+			{
+				log.debug( "  calling screen" );
+				screen.call( context );
+				return;
+			}
+			Assert.isFalse( canAccept == Screen.CANACCEPT.NEW );
+			log.debug( "  error with accepting" );
 			return;
 		}
 		

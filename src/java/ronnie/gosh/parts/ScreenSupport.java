@@ -3,11 +3,13 @@ package ronnie.gosh.parts;
 import groovy.lang.Closure;
 import groovy.lang.MetaProperty;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
@@ -15,6 +17,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 import ronnie.gosh.RequestContext;
 
+import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.util.Assert;
 
 
@@ -26,6 +29,7 @@ public class ScreenSupport extends Composite implements Screen
 	protected RequestContext context;
 	protected String myUrl;
 	protected boolean built;
+	protected boolean needsQueryString = true;
 	
 	public ScreenSupport()
 	{
@@ -38,12 +42,54 @@ public class ScreenSupport extends Composite implements Screen
 		this.myUrl = context.link( null );
 	}
 	
+	// Is not called for the first request
 	@Override
 	public CANACCEPT canAccept( RequestContext context )
 	{
-		if( !context.getRequest().getRequestURI().equals( this.myUrl ) )
-			return CANACCEPT.NEW;
-		return CANACCEPT.YES;
+		try
+		{
+			HttpServletRequest request = context.getRequest();
+			if( this.built )
+			{
+				if( request.getMethod().equals( "GET" ) )
+				{
+					if( !request.getRequestURI().equals( this.myUrl ) )
+						return CANACCEPT.NEW;
+					if( request.getQueryString() != null )
+						return CANACCEPT.NEW;
+					return CANACCEPT.YES;
+				}
+				if( request.getMethod().equals( "POST" ) )
+				{
+					return CANACCEPT.YES;
+				}
+				context.getResponse().sendError( HttpServletResponse.SC_METHOD_NOT_ALLOWED );
+				return CANACCEPT.ERROR;
+			}
+			
+			if( request.getMethod().equals( "GET" ) )
+			{
+				if( !this.needsQueryString )
+					return CANACCEPT.YES;
+				if( !request.getRequestURI().equals( this.myUrl ) )
+					return CANACCEPT.YES;
+				if( request.getQueryString() != null )
+					return CANACCEPT.YES;
+				context.getResponse().sendError( HttpServletResponse.SC_FORBIDDEN, "Screen state is lost, try reloading it." );
+				return CANACCEPT.ERROR;
+			}
+			if( request.getMethod().equals( "POST" ) )
+			{
+				context.getResponse().sendError( HttpServletResponse.SC_FORBIDDEN, "Screen state is lost, try reloading it." );
+				return CANACCEPT.ERROR;
+			}
+			context.getResponse().sendError( HttpServletResponse.SC_METHOD_NOT_ALLOWED );
+			return CANACCEPT.ERROR;
+		}
+		catch( IOException e )
+		{
+			throw new SystemException( e );
+		}
 	}
 
 	public void build()
@@ -61,7 +107,12 @@ public class ScreenSupport extends Composite implements Screen
 		if( context.getRequest().getMethod().equals( "POST" ) )
 		{
 			log.debug( "POST" );
-			// TODO Can't execute an action when the screen has just been build?
+			
+			if( !this.built )
+			{
+				this.context.sendForbidden( "Screen state is lost, try reloading it." );
+				return;
+			}
 			
 			String action = null;
 			Map< String, String[] > pars = context.getRequest().getParameterMap();
@@ -80,7 +131,7 @@ public class ScreenSupport extends Composite implements Screen
 			
 			applyRequest( context );
 
-			if( !context.hasErrors() )
+//			if( !context.hasErrors() ) errors must be kept in the components and collected in the end if needed
 				callAction( action );
 
 			if( context.hasErrors() )
@@ -120,6 +171,7 @@ public class ScreenSupport extends Composite implements Screen
 		String child = action.substring( 0, pos );
 		action = action.substring( pos + 1 );
 		Component component = this.childs.get( child );
+		Assert.notNull( component, "Component [" + child + "] not found" );
 		component.call( action );
 	}
 	

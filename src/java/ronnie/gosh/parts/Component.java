@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.List;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -125,5 +126,10 @@ public abstract class Component
 	public void setName( String name )
 	{
 		this.name = name;
+	}
+	
+	public void collectErrors( List< String > errors )
+	{
+		// To be implemented by subclasses
 	}
 }

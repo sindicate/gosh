@@ -13,6 +13,7 @@ import ronnie.gosh.parts.Form.Value;
 import ronnie.gosh.parts.Table.Column;
 
 import com.logicacmg.idt.commons.NotImplementedException;
+import com.logicacmg.idt.commons.util.Assert;
 import commonj.sdo.DataObject;
 
 public class ScreenBuilder implements GroovyInterceptable
@@ -91,9 +92,9 @@ public class ScreenBuilder implements GroovyInterceptable
 		return new Message( null, (Composite)this.current );
 	}
 
-	protected Errors errors()
+	protected Errors errors( Object... components )
 	{
-		return new Errors( null, (Composite)this.current );
+		return new Errors( null, (Composite)this.current, components );
 	}
 
 	protected Button button( Map args )
@@ -114,7 +115,8 @@ public class ScreenBuilder implements GroovyInterceptable
 		Closure update = (Closure)args.remove( "update" );
 		Message status = (Message)args.remove( "status" );
 		Errors errors = (Errors)args.remove( "errors" );
-		Table table = new Table( name, (Composite)this.current, data, path, retrieve, update, args, status, errors );
+		Assert.isNull( errors, "'errors' attribute not expected for 'table'" );
+		Table table = new Table( name, (Composite)this.current, data, path, retrieve, update, args, status );
 		Object title = args.remove( "title" );
 		table.title = title != null ? title.toString() : null;
 		Closure rowAdded = (Closure)args.remove( "rowAdded" );

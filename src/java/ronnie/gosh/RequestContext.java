@@ -8,10 +8,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -63,7 +61,7 @@ public class RequestContext
 	
 	protected Map fragmentsCollector;
 	protected Map plannedRedirect;
-	protected List< String > errors = new ArrayList< String >(); // TODO Do not initialize
+	protected Set< String > errors = new HashSet< String >(); // TODO Do not initialize
 
 	// Initial	
 	public RequestContext configure( HttpServletRequest request, HttpServletResponse response, ApplicationContext applicationContext, String controllerName, String actionName, Map args )
@@ -326,16 +324,15 @@ public class RequestContext
 	
 	public void redirect( Map args )
 	{
+		if( this.response.isCommitted() )
+			throw new IllegalStateException( "Cannot call redirect() after the response has been committed" );
+		
 		String url = link( args );
-		try
-		{
-			// TODO Make a relative redirect
-			this.response.sendRedirect( url );
-		}
-		catch( IOException e )
-		{
-			throw new SystemException( e );
-		}
+
+		// We don't use sendRedirect() because that adds the machine name and http: protocol
+		this.response.resetBuffer();
+		this.response.setStatus( HttpServletResponse.SC_SEE_OTHER ); // 303
+		this.response.setHeader( "Location", url );
 	}
 	
 	public void redirect( Map args, FlashKey key )
@@ -490,6 +487,21 @@ public class RequestContext
 	public boolean hasErrors()
 	{
 		return !this.errors.isEmpty();
+	}
+	
+	public void sendForbidden( String why )
+	{
+		if( this.response.isCommitted() )
+			throw new IllegalStateException( "Cannot call setStatus() after the response has been committed" );
+		
+		try
+		{
+			this.response.sendError( HttpServletResponse.SC_FORBIDDEN, why );
+		}
+		catch( IOException e )
+		{
+			throw new SystemException( e );
+		}
 	}
 }
 

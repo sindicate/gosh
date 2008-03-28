@@ -51,13 +51,13 @@ public class Table extends Composite
 	protected Button updateButton;
 	protected Button retrieveButton;
 	protected Message status;
-	protected Errors errors;
 	protected Map< String, String > unappliedRequestParameters;
 	protected String title;
 	protected Closure rowAdded;
 	protected boolean timestamp;
+	protected Set< String > errors = new HashSet();
 	
-	public Table( String name, Composite parent, DataObject data, String dataPath, Closure retrieve, Closure update, Map args, Message status, Errors errors )
+	public Table( String name, Composite parent, DataObject data, String dataPath, Closure retrieve, Closure update, Map args, Message status )
 	{
 		super( name, parent );
 		
@@ -71,7 +71,6 @@ public class Table extends Composite
 		this.updateButton = new UpdateButton();
 		this.retrieveButton = new RetrieveButton();
 		this.status = status;
-		this.errors = errors;
 	}
 	
 	@Override
@@ -222,6 +221,13 @@ public class Table extends Composite
 	
 	public void update()
 	{
+		if( !this.data.errors.isEmpty() )
+		{
+			this.errors.add( "Save failed." );
+			return;
+		}
+		
+		// TODO Only if there are no errors
 		this.update.call( new Object[] { this.data.dataObject } );
 		retrieve();
 		if( this.status != null )
@@ -230,6 +236,9 @@ public class Table extends Composite
 	
 	public void retrieve()
 	{
+		this.data.clearErrors();
+		this.errors.clear();
+		
 		this.data = (DataObjectWrapper)this.retrieve.call();
 		
 		// Retrieve select data
@@ -272,7 +281,8 @@ public class Table extends Composite
 	{
 //		super.applyRequest( context );
 
-		this.data.clearShadow();
+		this.errors.clear();
+		this.data.clearErrors();
 		
 		Set< String > checked = collectCheckedCheckBoxes();
 		
@@ -288,7 +298,27 @@ public class Table extends Composite
 				String prop = name.substring( prefix.length() );
 				String[] values = entry.getValue();
 				Assert.isTrue( values.length == 1 );
-				this.data.set( prop, values[ 0 ], context );
+				Assert.isTrue( prop.startsWith( this.dataPath ) );
+				String prop2 = prop.substring( this.dataPath.length() );
+				Assert.isTrue( prop2.startsWith( "[" ) );
+				int pos = prop2.indexOf( ']' );
+				Assert.isTrue( pos > 1 );
+				prop2 = prop2.substring( pos + 1 );
+				Assert.isTrue( prop2.startsWith( "/" ) );
+				prop2 = prop2.substring( 1 );
+				Column column = null;
+				log.debug( "Finding column [" + prop2 + "]" );
+				for( Column c : this.columns )
+				{
+					log.debug( "    Column [" + c.path + "]" );
+					if( prop2.equals( c.path ) )
+					{
+						column = c;
+						break;
+					}
+				}
+				Assert.notNull( column );
+				this.data.set( prop, values[ 0 ], column.mandatory, column.header );
 				checked.remove( prop ); // Remove from checked list
 			}
 		}
@@ -297,7 +327,7 @@ public class Table extends Composite
 		for( String path : checked )
 		{
 			log.debug( "Unchecking checkbox [" + path + "]" );
-			this.data.set( path, "false", context );
+			this.data.set( path, "false", false, null );
 		}
 	}
 
@@ -377,5 +407,14 @@ public class Table extends Composite
 		{
 			Table.this.retrieve();
 		}
+	}
+
+	@Override
+	public void collectErrors( List< String > errors )
+	{
+		//log.debug( "Adding [" + this.data.errors.size()  + " + " + this.errors.size() + "] error messages" );
+		if( this.data.errors != null )
+			errors.addAll( this.data.errors );
+		errors.addAll( this.errors );
 	}
 }
