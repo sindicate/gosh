@@ -1,13 +1,13 @@
 package ronnie.gosh;
 
+import groovy.lang.GString;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import net.sf.json.JSONSerializer;
-
-import groovy.lang.GString;
 
 import com.logicacmg.idt.commons.SystemException;
 
@@ -37,6 +37,7 @@ public class Util
 		"groovy.lang.Closure",
 		"groovy.lang.ExpandoMetaClass",
 		"groovy.lang.GroovyClassLoader",
+		"groovy.lang.GroovyObjectSupport",
 		"groovy.lang.MetaClassImpl",
 		"groovy.lang.MetaMethod",
 		"java.lang.reflect.Constructor",

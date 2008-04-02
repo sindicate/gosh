@@ -242,7 +242,7 @@ public class Table extends Composite
 	{
 		validate();
 		
-		if( !this.data.errors.isEmpty() || !this.errors.isEmpty() )
+		if( this.data.hasErrors() || !this.errors.isEmpty() )
 		{
 			this.errors.add( "Save failed" );
 			return;
@@ -376,6 +376,13 @@ public class Table extends Composite
 		return row;
 	}
 	
+	private void removeRow( int rownum )
+	{
+//		Table.this.data.dataObject.getList( Table.this.dataPath ).remove( rownum - 1 );
+		this.data.removeRow( this.dataPath, rownum );
+//		this.log.debug( "removed " + rownum );
+	}
+	
 	public int getRowCount()
 	{
 		return this.data.dataObject.getList( this.dataPath ).size();
@@ -393,8 +400,7 @@ public class Table extends Composite
 		public void click( String arg )
 		{
 			int rownum = Integer.parseInt( arg );
-			Table.this.data.dataObject.getList( Table.this.dataPath ).remove( rownum - 1 );
-//			this.log.debug( "removed " + rownum );
+			removeRow( rownum );
 		}
 	}
 	
@@ -450,8 +456,7 @@ public class Table extends Composite
 	public void collectErrors( List< String > errors )
 	{
 		//log.debug( "Adding [" + this.data.errors.size()  + " + " + this.errors.size() + "] error messages" );
-		if( this.data.errors != null )
-			errors.addAll( this.data.errors );
+		this.data.collectErrors( errors );
 		errors.addAll( this.errors );
 	}
 }

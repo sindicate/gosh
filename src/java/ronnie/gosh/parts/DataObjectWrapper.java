@@ -7,10 +7,12 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 import org.apache.tuscany.sdo.util.DataObjectUtil;
@@ -28,12 +30,17 @@ public class DataObjectWrapper
 
 	protected DataObject dataObject;
 	protected Map< String, String > shadow;
-	protected Set< String > errors;
+	protected Map< String, String > errors;
 	protected Set< String > timestamps = new HashSet< String >();
 	
 	public DataObjectWrapper( DataObject dataObject )
 	{
 		this.dataObject = dataObject;
+	}
+	
+	protected void addError( String path, String error )
+	{
+		this.errors.put( path, error );
 	}
 	
 	public void set( String path, String value )
@@ -57,7 +64,7 @@ public class DataObjectWrapper
 				}
 				catch( ParseException e )
 				{
-					this.errors.add( "'" + value + "' could not be converted to a timestamp" );
+					addError( path, "'" + value + "' could not be converted to a timestamp" );
 					log.debug( "put in shadow: [" + path + "] = [" + value + "]" );
 					this.shadow.put( path, value );
 					return;
@@ -73,7 +80,7 @@ public class DataObjectWrapper
 					}
 					catch( NumberFormatException e )
 					{
-						this.errors.add( "'" + value + "' could not be converted to an integer" );
+						addError( path, "'" + value + "' could not be converted to an integer" );
 						log.debug( "put in shadow: [" + path + "] = [" + value + "]" );
 						this.shadow.put( path, value );
 						return;
@@ -87,7 +94,7 @@ public class DataObjectWrapper
 					}
 					catch( NumberFormatException e )
 					{
-						this.errors.add( "'" + value + "' could not be converted to an integer" );
+						addError( path, "'" + value + "' could not be converted to an integer" );
 						log.debug( "put in shadow: [" + path + "] = [" + value + "]" );
 						this.shadow.put( path, value );
 						return;
@@ -164,7 +171,7 @@ public class DataObjectWrapper
 
 	public void clearErrors()
 	{
-		this.errors = new LinkedHashSet< String >();
+		this.errors = new LinkedHashMap< String, String >();
 		this.shadow = new HashMap();
 	}
 	
@@ -176,5 +183,30 @@ public class DataObjectWrapper
 	public List< DataObject > getRows( String path )
 	{
 		return this.dataObject.getList( path );
+	}
+
+	public void removeRow( String path, int rownum )
+	{
+		this.dataObject.getList( path ).remove( rownum - 1 );
+		
+		// Remove errors for that row
+		String p = path + "[" + rownum + "]";
+		for( Iterator< Entry< String, String > > iter = this.errors.entrySet().iterator(); iter.hasNext(); )
+		{
+			Entry< String, String > entry = iter.next();
+			if( entry.getKey().startsWith( p ) )
+				iter.remove();
+		}
+	}
+
+	public boolean hasErrors()
+	{
+		return !this.errors.isEmpty();
+	}
+
+	public void collectErrors( List< String > errors )
+	{
+		if( this.errors != null )
+			errors.addAll( this.errors.values() );
 	}
 }
