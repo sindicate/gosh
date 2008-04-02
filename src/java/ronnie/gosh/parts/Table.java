@@ -376,7 +376,7 @@ public class Table extends Composite
 		return row;
 	}
 	
-	private void removeRow( int rownum )
+	public void removeRow( int rownum )
 	{
 //		Table.this.data.dataObject.getList( Table.this.dataPath ).remove( rownum - 1 );
 		this.data.removeRow( this.dataPath, rownum );
