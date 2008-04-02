@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -13,6 +14,8 @@ import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 
+import ronnie.gosh.DatastorageReferentialConstraintException;
+import ronnie.gosh.GroovySupport;
 import ronnie.gosh.RequestContext;
 
 import com.logicacmg.idt.commons.util.Assert;
@@ -33,7 +36,8 @@ public class Table extends Composite
 		protected boolean mandatory;
 		protected List things = new ArrayList();
 		protected boolean delete;
-		protected boolean checkbox; // TODO Change to type, inherit from SDO
+		protected boolean checkbox; // TODO Change to type, inherit from SDO\
+		protected Integer size;
 		
 		public void addLink( Link link )
 		{
@@ -55,7 +59,7 @@ public class Table extends Composite
 	protected String title;
 	protected Closure rowAdded;
 	protected boolean timestamp;
-	protected Set< String > errors = new HashSet();
+	protected Set< String > errors = new LinkedHashSet< String >();
 	
 	public Table( String name, Composite parent, DataObject data, String dataPath, Closure retrieve, Closure update, Map args, Message status )
 	{
@@ -108,12 +112,12 @@ public class Table extends Composite
 				if( column.path != null )
 				{
 					String fieldPath = rowPath + column.path;
-					Object value;
+					Object value = null;
 					if( shadow != null && shadow.containsKey( fieldPath ) )
 						value = shadow.get( fieldPath );
-					else
+					else if( row.isSet( column.path ) )
 						value = row.get( column.path );
-					log.debug( "value: " + ( value == null ? "(null)" : value.getClass() ) );
+					log.debug( "value for " + column.path + ": " + ( value == null ? "(null)" : value.getClass() ) );
 					
 					if( column.edit )
 					{
@@ -124,8 +128,15 @@ public class Table extends Composite
 							out.print( path );
 							out.print( fieldPath );
 							out.print( "\">" );
-							if( value == null )
-								out.print( "<option value=\"\" selected=\"selected\">(select)</option>" );
+							if( value == null || !column.mandatory )
+							{
+								out.print( "<option value=\"\" selected=\"selected\">" );
+								if( column.mandatory )
+									out.print( "(select)" );
+								else
+									out.print( "&nbsp;" );
+								out.print( "</option>" );
+							}
 							for( DataObject object : column.selectData )
 							{
 								out.print( "<option value=\"" );
@@ -157,6 +168,11 @@ public class Table extends Composite
 							out.print( fieldPath );
 							out.print( "\" value=\"" );
 							print( context, out, value );
+							if( column.size != null )
+							{
+								out.print( "\" size=\"" );
+								out.print( column.size );
+							}
 							out.print( "\"/>" );
 						}
 					}
@@ -188,7 +204,10 @@ public class Table extends Composite
 							out.print( "<a href=\"" );
 							out.print( context.link( new HashMap( args ) ) );
 							out.print( "\">" );
-							out.print( context.encode( link.text ) );
+							if( link.text != null )
+								out.print( context.encode( link.text ) );
+							else
+								out.print( link.html );
 							out.print( "</a>" );
 						}
 					}
@@ -221,17 +240,26 @@ public class Table extends Composite
 	
 	public void update()
 	{
-		if( !this.data.errors.isEmpty() )
+		validate();
+		
+		if( !this.data.errors.isEmpty() || !this.errors.isEmpty() )
 		{
-			this.errors.add( "Save failed." );
+			this.errors.add( "Save failed" );
 			return;
 		}
 		
 		// TODO Only if there are no errors
-		this.update.call( new Object[] { this.data.dataObject } );
-		retrieve();
-		if( this.status != null )
-			this.status.setMessage( "rows updated" );
+		try
+		{
+			GroovySupport.callClosure( this.update, this.data.dataObject );
+			retrieve();
+			if( this.status != null )
+				this.status.setMessage( "rows updated" );
+		}
+		catch( DatastorageReferentialConstraintException e )
+		{
+			this.errors.add( "Cannot save because of referential constraints" );
+		}
 	}
 	
 	public void retrieve()
@@ -307,10 +335,10 @@ public class Table extends Composite
 				Assert.isTrue( prop2.startsWith( "/" ) );
 				prop2 = prop2.substring( 1 );
 				Column column = null;
-				log.debug( "Finding column [" + prop2 + "]" );
+//				log.debug( "Finding column [" + prop2 + "]" );
 				for( Column c : this.columns )
 				{
-					log.debug( "    Column [" + c.path + "]" );
+//					log.debug( "    Column [" + c.path + "]" );
 					if( prop2.equals( c.path ) )
 					{
 						column = c;
@@ -318,7 +346,7 @@ public class Table extends Composite
 					}
 				}
 				Assert.notNull( column );
-				this.data.set( prop, values[ 0 ], column.mandatory, column.header );
+				this.data.set( prop, values[ 0 ] );
 				checked.remove( prop ); // Remove from checked list
 			}
 		}
@@ -327,8 +355,17 @@ public class Table extends Composite
 		for( String path : checked )
 		{
 			log.debug( "Unchecking checkbox [" + path + "]" );
-			this.data.set( path, "false", false, null );
+			this.data.set( path, "false" );
 		}
+	}
+	
+	public void validate()
+	{
+		for( DataObject object : this.data.getRows( this.dataPath ) )
+			for( Column column : this.columns )
+				if( column.mandatory )
+					if( !object.isSet( column.path ) || object.get( column.path ) == null )
+						this.errors.add( "Missing value for " + column.header );
 	}
 
 	public DataObject addRow()

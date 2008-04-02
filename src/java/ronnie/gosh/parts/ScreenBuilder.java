@@ -145,6 +145,7 @@ public class ScreenBuilder implements GroovyInterceptable
 		column.mandatory = mandatory != null ? mandatory : false;
 		Boolean checkbox = (Boolean)args.get( "checkbox" );
 		column.checkbox = checkbox != null ? checkbox : false;
+		column.size = (Integer)args.get( "size" );
 
 		Table table = (Table)this.current;
 		table.addColumn( column );
@@ -166,6 +167,7 @@ public class ScreenBuilder implements GroovyInterceptable
 	{
 		Link link = new Link();
 		link.text = (String)args.remove( "text" );
+		link.html = (String)args.remove( "html" );
 		link.args = args;
 
 		Column column = (Column)this.current;
@@ -216,7 +218,5 @@ public class ScreenBuilder implements GroovyInterceptable
 		log.debug( "setProperty [" + ( this.current != null ? this.current.getClass() : "null" ) + "][" + name + "] <- [" + ( value != null ? value.getClass() : "null" ) + "]" );
 		( (Composite)this.current ).childs.put( name, (Component)value );
 		( (Component)value ).name = name;
-//		InvokerHelper.setProperty( this.current.c, name, value );
-//		throw new NotImplementedException();
 	}
 }

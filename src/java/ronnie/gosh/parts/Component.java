@@ -8,8 +8,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
-
+import ronnie.gosh.GroovySupport;
 import ronnie.gosh.RequestContext;
 
 import com.logicacmg.idt.commons.util.Assert;
@@ -62,12 +61,12 @@ public abstract class Component
 		{
 			String arg = action.substring( pos + 1, action.length() - 1 );
 			action = action.substring( 0, pos );
-			InvokerHelper.invokeMethod( this, action, arg );
+			GroovySupport.callMethod( this, action, arg );
 		}
 		else
 		{
 			action = action.substring( 0, action.length() - 2 );
-			InvokerHelper.invokeMethod( this, action, null );
+			GroovySupport.callMethod( this, action );
 		}
 	}
 	

@@ -175,7 +175,7 @@ public class Form extends Composite
 				String prop = name.substring( path.length() );
 				String[] values = entry.getValue();
 				Assert.isTrue( values.length == 1 );
-				this.data.set( prop, values[ 0 ], false, null ); // TODO mandatory fields
+				this.data.set( prop, values[ 0 ] );
 			}
 		}
 	}

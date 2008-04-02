@@ -7,6 +7,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,7 +36,7 @@ public class DataObjectWrapper
 		this.dataObject = dataObject;
 	}
 	
-	public void set( String path, String value, boolean mandatory, String name )
+	public void set( String path, String value )
 	{
 		if( value != null && value.length() == 0 )
 			value = null;
@@ -78,6 +80,18 @@ public class DataObjectWrapper
 					}
 				else if( type.getName().equals( "Boolean" ) )
 					v = toBoolean( value );
+				else if( type.getName().equals( "Short" ) )
+					try
+					{
+						v = toShort( value );
+					}
+					catch( NumberFormatException e )
+					{
+						this.errors.add( "'" + value + "' could not be converted to an integer" );
+						log.debug( "put in shadow: [" + path + "] = [" + value + "]" );
+						this.shadow.put( path, value );
+						return;
+					}
 				else
 					v = value;
 			}
@@ -90,13 +104,7 @@ public class DataObjectWrapper
 					if( !( old instanceof String && ( (String)old ).length() == 0 ) )
 					{
 						log.debug( "  set [" + path + "] = [" + old + "] <- [" + v + "]" );
-						if( mandatory )
-						{
-							this.errors.add( "Missing value for " + name );
-							this.shadow.put( path, value );
-						}
-						else
-							accessor.set( v );
+						accessor.set( v );
 					}
 			}
 			else if( !v.equals( old ) )
@@ -117,6 +125,13 @@ public class DataObjectWrapper
 		if( value == null )
 			return null;
 		return Integer.valueOf( value );
+	}
+	
+	static protected Short toShort( String value ) throws NumberFormatException
+	{
+		if( value == null )
+			return null;
+		return Short.valueOf( value );
 	}
 	
 	static protected Boolean toBoolean( String value ) throws NumberFormatException
@@ -149,12 +164,17 @@ public class DataObjectWrapper
 
 	public void clearErrors()
 	{
-		this.errors = new HashSet();
+		this.errors = new LinkedHashSet< String >();
 		this.shadow = new HashMap();
 	}
 	
 	public void setTimestamp( String name )
 	{
 		this.timestamps.add( name );
+	}
+	
+	public List< DataObject > getRows( String path )
+	{
+		return this.dataObject.getList( path );
 	}
 }

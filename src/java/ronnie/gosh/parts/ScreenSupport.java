@@ -1,7 +1,6 @@
 package ronnie.gosh.parts;
 
 import groovy.lang.Closure;
-import groovy.lang.MetaProperty;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -13,8 +12,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
-import org.codehaus.groovy.runtime.InvokerHelper;
 
+import ronnie.gosh.GroovySupport;
 import ronnie.gosh.RequestContext;
 
 import com.logicacmg.idt.commons.SystemException;
@@ -94,7 +93,7 @@ public class ScreenSupport extends Composite implements Screen
 
 	public void build()
 	{
-		callHook( "build" );
+		GroovySupport.callHook( this, "build", this.context );
 	}
 
 	// TODO This can be non-public?
@@ -144,7 +143,7 @@ public class ScreenSupport extends Composite implements Screen
 			return;
 		}
 		
-		if( !context.getRequest().getRequestURI().equals( this.myUrl ) )
+		if( !context.getRequest().getRequestURI().equals( this.myUrl ) || context.getRequest().getQueryString() != null )
 		{
 			log.debug( "Not base url" );
 			build();
@@ -197,7 +196,7 @@ public class ScreenSupport extends Composite implements Screen
 		response.setHeader( "Cache-Control", "no-cache" ); // Needed for IE6
 		response.setHeader( "Cache-Control", "no-store" ); // no-store prevents back-button caching in both IE7 and Firefox
 
-		callHook( "render" );
+		GroovySupport.callHook( this, "render", this.context );
 	}
 	
 	public void close()
@@ -237,18 +236,7 @@ public class ScreenSupport extends Composite implements Screen
 	@Override
 	public void applyRequest( RequestContext context )
 	{
-		callHook( "applyRequestStart" );
+		GroovySupport.callHook( this, "applyRequestStart", this.context );
 		super.applyRequest( context );
-	}
-
-	protected void callHook( String name )
-	{
-		MetaProperty property = InvokerHelper.getMetaClass( this ).hasProperty( this, name );
-		if( property != null )
-		{
-			Closure closure = (Closure)property.getProperty( this );
-			closure.setDelegate( this.context );
-			closure.call();
-		}
 	}
 }
