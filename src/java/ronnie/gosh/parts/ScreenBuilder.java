@@ -14,7 +14,6 @@ import ronnie.gosh.parts.Table.Column;
 
 import com.logicacmg.idt.commons.NotImplementedException;
 import com.logicacmg.idt.commons.util.Assert;
-import commonj.sdo.DataObject;
 
 public class ScreenBuilder implements GroovyInterceptable
 {
@@ -54,15 +53,14 @@ public class ScreenBuilder implements GroovyInterceptable
 		return InvokerHelper.getMetaClass( getClass() );
 	}
 
+	// TODO Give errors on unexpected arguments
 	protected Form form( Map args, Closure closure )
 	{
 		String name = (String)args.remove( "name" );
 		Object title = args.remove( "title" );
-		String path = (String)args.remove( "path" );
 		Closure retrieve = (Closure)args.remove( "retrieve" );
 		Closure update = (Closure)args.remove( "update" );
-		Errors errors = (Errors)args.remove( "errors" );
-		Form form = new Form( name, title != null ? title.toString() : null, (Composite)this.current, path, retrieve, update, args, errors );
+		Form form = new Form( name, title != null ? title.toString() : null, (Composite)this.current, retrieve, update, args );
 		
 		callClosure( form, closure );
 
@@ -109,14 +107,12 @@ public class ScreenBuilder implements GroovyInterceptable
 	protected Table table( Map args, Closure closure )
 	{
 		String name = (String)args.remove( "name" );
-		DataObject data = (DataObject)args.remove( "data" );
 		Closure retrieve = (Closure)args.remove( "retrieve" );
-		String path = (String)args.remove( "path" );
 		Closure update = (Closure)args.remove( "update" );
 		Message status = (Message)args.remove( "status" );
 		Errors errors = (Errors)args.remove( "errors" );
 		Assert.isNull( errors, "'errors' attribute not expected for 'table'" );
-		Table table = new Table( name, (Composite)this.current, data, path, retrieve, update, args, status );
+		Table table = new Table( name, (Composite)this.current, retrieve, update, args, status );
 		Object title = args.remove( "title" );
 		table.title = title != null ? title.toString() : null;
 		Closure rowAdded = (Closure)args.remove( "rowAdded" );

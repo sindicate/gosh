@@ -1,6 +1,6 @@
 package ronnie.gosh;
 
-public class HasChildDependenciesException extends DatastorageReferentialConstraintException
+public class HasChildDependenciesException extends DatastorageIntegrityConstraintException
 {
 	public HasChildDependenciesException()
 	{

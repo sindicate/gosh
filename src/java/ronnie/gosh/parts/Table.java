@@ -14,7 +14,7 @@ import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 
-import ronnie.gosh.DatastorageReferentialConstraintException;
+import ronnie.gosh.DatastorageIntegrityConstraintException;
 import ronnie.gosh.GroovySupport;
 import ronnie.gosh.RequestContext;
 
@@ -46,8 +46,7 @@ public class Table extends Composite
 	}
 
 	protected List< Column > columns;
-	protected DataObjectWrapper data;
-	protected String dataPath;
+	protected DataObjectTableWrapper data;
 	protected Closure retrieve;
 	protected Closure update;
 	protected Button removeButton;
@@ -61,13 +60,11 @@ public class Table extends Composite
 	protected boolean timestamp;
 	protected Set< String > errors = new LinkedHashSet< String >();
 	
-	public Table( String name, Composite parent, DataObject data, String dataPath, Closure retrieve, Closure update, Map args, Message status )
+	public Table( String name, Composite parent, Closure retrieve, Closure update, Map args, Message status )
 	{
 		super( name, parent );
 		
 		this.columns = new ArrayList();
-		this.data = new DataObjectWrapper( data );
-		this.dataPath = dataPath;
 		this.update = update;
 		this.retrieve = retrieve;
 		this.removeButton = new RemoveButton();
@@ -99,13 +96,13 @@ public class Table extends Composite
 			out.print( "</th>" );
 		}
 		out.print( "</tr>\n" );
-		List<DataObject> data = this.data.dataObject.getList( this.dataPath );
+		List<DataObject> data = this.data.getRows();
 		int i = 1;
 		String path = getPath() + ".";
 		Map< String, String > shadow = this.data.shadow;
 		for( DataObject row : data )
 		{
-			String rowPath = this.dataPath + "[" + i + "]/";
+			String rowPath = "[" + i + "]/";
 			out.print( "	<tr class=\"row\">\n" );
 			for( Column column : this.columns )
 			{
@@ -256,18 +253,18 @@ public class Table extends Composite
 			if( this.status != null )
 				this.status.setMessage( "rows updated" );
 		}
-		catch( DatastorageReferentialConstraintException e )
+		catch( DatastorageIntegrityConstraintException e )
 		{
-			this.errors.add( "Cannot save because of referential constraints" );
+			this.errors.add( "Data integrity constraints prohibit the changes from being saved" );
+			this.errors.add( "Save failed" );
 		}
 	}
 	
 	public void retrieve()
 	{
-		this.data.clearErrors();
 		this.errors.clear();
 		
-		this.data = (DataObjectWrapper)this.retrieve.call();
+		this.data = (DataObjectTableWrapper)this.retrieve.call();
 		Assert.notNull( this.data );
 		
 		// Retrieve select data
@@ -286,11 +283,11 @@ public class Table extends Composite
 	{
 		Set< String > result = new HashSet< String >();
 		
-		List< DataObject > data = this.data.dataObject.getList( this.dataPath );
+		List< DataObject > data = this.data.getRows();
 		int i = 1;
 		for( DataObject row : data )
 		{
-			String rowPath = this.dataPath + "[" + i + "]/";
+			String rowPath = "[" + i + "]/";
 			for( Column column : this.columns )
 				if( column.path != null )
 					if( column.edit && column.checkbox )
@@ -330,12 +327,10 @@ public class Table extends Composite
 				String prop = name.substring( prefix.length() );
 				String[] values = entry.getValue();
 				Assert.isTrue( values.length == 1 );
-				Assert.isTrue( prop.startsWith( this.dataPath ) );
-				String prop2 = prop.substring( this.dataPath.length() );
-				Assert.isTrue( prop2.startsWith( "[" ) );
-				int pos = prop2.indexOf( ']' );
+				Assert.isTrue( prop.startsWith( "[" ) );
+				int pos = prop.indexOf( ']' );
 				Assert.isTrue( pos > 1 );
-				prop2 = prop2.substring( pos + 1 );
+				String prop2 = prop.substring( pos + 1 );
 				Assert.isTrue( prop2.startsWith( "/" ) );
 				prop2 = prop2.substring( 1 );
 				Column column = null;
@@ -350,7 +345,7 @@ public class Table extends Composite
 					}
 				}
 				Assert.notNull( column );
-				this.data.set( prop, values[ 0 ] );
+				this.data.setString( prop, values[ 0 ] );
 				checked.remove( prop ); // Remove from checked list
 			}
 		}
@@ -359,13 +354,13 @@ public class Table extends Composite
 		for( String path : checked )
 		{
 			log.debug( "Unchecking checkbox [" + path + "]" );
-			this.data.set( path, "false" );
+			this.data.setString( path, "false" );
 		}
 	}
 	
 	public void validate()
 	{
-		for( DataObject object : this.data.getRows( this.dataPath ) )
+		for( DataObject object : this.data.getRows() )
 			for( Column column : this.columns )
 				if( column.mandatory )
 					if( !object.isSet( column.path ) || object.get( column.path ) == null )
@@ -374,7 +369,7 @@ public class Table extends Composite
 
 	public DataObject addRow()
 	{
-		DataObject row = this.data.dataObject.createDataObject( this.dataPath );
+		DataObject row = this.data.addRow();
 		if( this.rowAdded != null )
 			this.rowAdded.call( row );
 		return row;
@@ -383,13 +378,13 @@ public class Table extends Composite
 	public void removeRow( int rownum )
 	{
 //		Table.this.data.dataObject.getList( Table.this.dataPath ).remove( rownum - 1 );
-		this.data.removeRow( this.dataPath, rownum );
+		this.data.removeRow( rownum );
 //		this.log.debug( "removed " + rownum );
 	}
 	
 	public int getRowCount()
 	{
-		return this.data.dataObject.getList( this.dataPath ).size();
+		return this.data.getRows().size();
 	}
 	
 	public class RemoveButton extends Button

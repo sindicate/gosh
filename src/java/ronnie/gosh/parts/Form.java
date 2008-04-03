@@ -4,10 +4,14 @@ import groovy.lang.Closure;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 
+import ronnie.gosh.DatastorageIntegrityConstraintException;
+import ronnie.gosh.GroovySupport;
 import ronnie.gosh.RequestContext;
 
 import com.logicacmg.idt.commons.util.Assert;
@@ -30,21 +34,18 @@ public class Form extends Composite
 	protected List< Value > values;
 	protected Closure retrieve;
 	protected Closure update;
-	protected Errors errors;
-	protected DataObjectWrapper data;
-	protected String path;
+	protected DataObjectTableWrapper data;
 	protected Button updateButton;
 	protected String title;
+	protected Set< String > errors = new LinkedHashSet< String >();
 
-	public Form( String name, String title, Composite parent, String path, Closure retrieve, Closure update, Map args, Errors errors )
+	public Form( String name, String title, Composite parent, Closure retrieve, Closure update, Map args )
 	{
 		super( name, parent );
 		
 		this.title = title;
 		this.retrieve = retrieve;
 		this.update = update;
-		this.errors = errors;
-		this.path = path;
 		
 		this.values = new ArrayList();
 		this.updateButton = new UpdateButton();
@@ -56,9 +57,9 @@ public class Form extends Composite
 
 	}
 	
-	public void retrieve( Object... args )
+	public void retrieve()
 	{
-		this.data = new DataObjectWrapper( (DataObject)this.retrieve.call( args ) );
+		this.data = (DataObjectTableWrapper)this.retrieve.call();
 		
 		// Retrieve select data
 		for( Value value : this.values )
@@ -71,7 +72,7 @@ public class Form extends Composite
 	{
 		PrintWriter out = context.getOut();
 
-		String path = this.name + "." + this.path + "[1]";
+		String path = this.name + ".[1]";
 		
 		out.print( "<table class=\"form\">\n" );
 		if( this.title != null )
@@ -81,6 +82,7 @@ public class Form extends Composite
 			out.print( "</td></tr>\n" );
 		}
 		boolean edit = false;
+		DataObject row = this.data.getRows().get( 0 );
 		for( Value value : this.values )
 		{
 			if( value.edit )
@@ -91,7 +93,7 @@ public class Form extends Composite
 			out.print( ":</th><td>" );
 			if( value.select != null )
 			{
-				Object value2 = this.data.dataObject.get( this.path + "[1]/" + value.path );
+				Object value2 = row.get( value.path );
 				if( value.edit )
 				{
 					out.print( "<select name=\"" );
@@ -136,11 +138,11 @@ public class Form extends Composite
 					out.print( '/' );
 					out.print( value.path );
 					out.print( "\" value=\"" );
-					print( context, out, this.data.dataObject.getString( this.path + "[1]/" + value.path ) );
+					print( context, out, row.getString( value.path ) );
 					out.print( "\"/>" );
 				}
 				else
-					print( context, out, this.data.dataObject.getString( this.path + "[1]/" + value.path ) );
+					print( context, out, row.getString( value.path ) );
 			}
 			out.print( "</td></tr>\n" );
 		}
@@ -155,7 +157,25 @@ public class Form extends Composite
 
 	public void update()
 	{
-		this.update.call( new Object[] { this.data } );
+		validate();
+		
+		if( this.data.hasErrors() || !this.errors.isEmpty() )
+		{
+			this.errors.add( "Save failed" );
+			return;
+		}
+		
+		// TODO Only if there are no errors
+		try
+		{
+			// TODO I think we should communicate DataObjectTableWrapper instead
+			GroovySupport.callClosure( this.update, this.data.dataObject );
+		}
+		catch( DatastorageIntegrityConstraintException e )
+		{
+			this.errors.add( "Data integrity constraints prohibit the changes from being saved" );
+			this.errors.add( "Save failed" );
+		}
 	}
 
 	@Override
@@ -163,6 +183,9 @@ public class Form extends Composite
 	{
 //		super.applyRequest( context );
 		
+		this.errors.clear();
+		this.data.clearErrors();
+
 		String path = getPath() + ".";
 		
 		Map< String, String[] > pars = context.getRequest().getParameterMap();
@@ -175,7 +198,7 @@ public class Form extends Composite
 				String prop = name.substring( path.length() );
 				String[] values = entry.getValue();
 				Assert.isTrue( values.length == 1 );
-				this.data.set( prop, values[ 0 ] );
+				this.data.setString( prop, values[ 0 ] );
 			}
 		}
 	}
@@ -194,5 +217,22 @@ public class Form extends Composite
 		{
 			Form.this.update();
 		}
+	}
+	
+	public void validate()
+	{
+		for( DataObject object : this.data.getRows() )
+			for( Value value : this.values )
+				if( value.mandatory )
+					if( !object.isSet( value.path ) || object.get( value.path ) == null )
+						this.errors.add( "Missing value for " + value.description );
+	}
+
+	@Override
+	public void collectErrors( List< String > errors )
+	{
+		//log.debug( "Adding [" + this.data.errors.size()  + " + " + this.errors.size() + "] error messages" );
+		this.data.collectErrors( errors );
+		errors.addAll( this.errors );
 	}
 }

@@ -24,18 +24,27 @@ import commonj.sdo.DataObject;
 import commonj.sdo.Property;
 import commonj.sdo.Type;
 
-public class DataObjectWrapper
+public class DataObjectTableWrapper
 {
-	static private final Logger log = Logger.getLogger( DataObjectWrapper.class );
+	static private final Logger log = Logger.getLogger( DataObjectTableWrapper.class );
 
 	protected DataObject dataObject;
+	protected String path;
 	protected Map< String, String > shadow;
 	protected Map< String, String > errors;
 	protected Set< String > timestamps = new HashSet< String >();
+	protected Map< String, Object > defaultValues;
 	
-	public DataObjectWrapper( DataObject dataObject )
+	public DataObjectTableWrapper( DataObject dataObject, String path )
 	{
 		this.dataObject = dataObject;
+		this.path = path;
+	}
+	
+	public DataObjectTableWrapper( DataObject dataObject, String path, Map defaultValues )
+	{
+		this( dataObject, path );
+		this.defaultValues = defaultValues;
 	}
 	
 	protected void addError( String path, String error )
@@ -43,13 +52,15 @@ public class DataObjectWrapper
 		this.errors.put( path, error );
 	}
 	
-	public void set( String path, String value )
+	public void setString( String path, String value )
 	{
+		String fullPath = this.path + path;
+		
 		if( value != null && value.length() == 0 )
 			value = null;
 		
 		// TODO Check that only editable things are being set
-		Accessor accessor = DataObjectUtil.Accessor.create( (EObject)this.dataObject, path, value );
+		Accessor accessor = DataObjectUtil.Accessor.create( (EObject)this.dataObject, fullPath, value );
 		try
 		{
 			Property property = accessor.getProperty();
@@ -72,7 +83,7 @@ public class DataObjectWrapper
 			}
 			else
 			{
-				log.debug( "Converting [" + path + "] to [" + type.getName() + "]" );
+				log.debug( "Converting [" + fullPath + "] to [" + type.getName() + "]" );
 				if( type.getName().equals( "Int" ) || type.getName().equals( "IntObject" ) )
 					try
 					{
@@ -103,7 +114,7 @@ public class DataObjectWrapper
 					v = value;
 			}
 
-			Object old = this.dataObject.get( path );
+			Object old = this.dataObject.get( fullPath );
 			log.debug( "old: " + ( old != null ? old.getClass() : "null" ) );
 			if( v == null )
 			{
@@ -119,6 +130,39 @@ public class DataObjectWrapper
 				log.debug( "new: " + v.getClass() );
 				log.debug( "  set [" + path + "] = [" + old + "] <- [" + v + "]" );
 				accessor.set( v );
+			}
+		}
+		finally
+		{
+			accessor.recycle();
+		}
+	}
+	
+	// TODO Rename back to set
+	public void set2( String path, Object value )
+	{
+		String fullPath = this.path + path;
+		
+		// TODO Check that only editable things are being set
+		Accessor accessor = DataObjectUtil.Accessor.create( (EObject)this.dataObject, fullPath, value );
+		try
+		{
+			Object old = this.dataObject.get( fullPath );
+			log.debug( "old: " + ( old != null ? old.getClass() : "null" ) );
+			if( value == null )
+			{
+				if( old != null )
+					if( !( old instanceof String && ( (String)old ).length() == 0 ) )
+					{
+						log.debug( "  set [" + path + "] = [" + old + "] <- [" + value + "]" );
+						accessor.set( value );
+					}
+			}
+			else if( !value.equals( old ) )
+			{
+				log.debug( "new: " + value.getClass() );
+				log.debug( "  set [" + path + "] = [" + old + "] <- [" + value + "]" );
+				accessor.set( value );
 			}
 		}
 		finally
@@ -175,22 +219,23 @@ public class DataObjectWrapper
 		this.shadow = new HashMap();
 	}
 	
-	public void setTimestamp( String name )
+	// TODO Find better name
+	public void addTimestamp( String name )
 	{
 		this.timestamps.add( name );
 	}
 	
-	public List< DataObject > getRows( String path )
+	public List< DataObject > getRows()
 	{
-		return this.dataObject.getList( path );
+		return this.dataObject.getList( this.path );
 	}
 
-	public void removeRow( String path, int rownum )
+	public void removeRow( int rownum )
 	{
-		this.dataObject.getList( path ).remove( rownum - 1 );
+		getRows().remove( rownum - 1 );
 		
 		// Remove errors for that row
-		String p = path + "[" + rownum + "]";
+		String p = "[" + rownum + "]";
 		for( Iterator< Entry< String, String > > iter = this.errors.entrySet().iterator(); iter.hasNext(); )
 		{
 			Entry< String, String > entry = iter.next();
@@ -201,6 +246,8 @@ public class DataObjectWrapper
 
 	public boolean hasErrors()
 	{
+		if( this.errors == null )
+			return false;
 		return !this.errors.isEmpty();
 	}
 
@@ -208,5 +255,14 @@ public class DataObjectWrapper
 	{
 		if( this.errors != null )
 			errors.addAll( this.errors.values() );
+	}
+
+	public DataObject addRow()
+	{
+		DataObject result = this.dataObject.createDataObject( this.path );
+		if( this.defaultValues != null )
+			for( Entry< String, Object > entry : this.defaultValues.entrySet() )
+				set2( entry.getKey(), entry.getValue() );
+		return result;
 	}
 }

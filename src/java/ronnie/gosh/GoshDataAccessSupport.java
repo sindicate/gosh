@@ -5,16 +5,20 @@ import groovy.lang.GString;
 
 import java.io.Serializable;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.apache.tuscany.das.rdb.DAS;
 import org.apache.tuscany.das.rdb.config.impl.ResultDescriptorImpl;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 
+import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.util.Assert;
+import commonj.sdo.DataObject;
 
 public class GoshDataAccessSupport extends HibernateDaoSupport
 {
@@ -106,5 +110,39 @@ public class GoshDataAccessSupport extends HibernateDaoSupport
 		fieldDescriptor.setColumnName( column );
 		fieldDescriptor.setColumnType( type );
 		descriptor.add( fieldDescriptor );
+	}
+	
+	protected void handleDASException( RuntimeException e )
+	{
+		Throwable t = e.getCause();
+		log.debug( "Cause of type " + t.getClass().getName() );
+		if( t instanceof SQLException )
+		{
+			SQLException sqle = (SQLException)t;
+			String sqlState = sqle.getSQLState();
+			String sqlStateClass = sqlState.substring( 0, 2 );
+			if( sqlState.equals( "23502" ) )
+				throw new MissingDataException();
+			if( sqlState.equals( "23503" ) )
+				throw new HasChildDependenciesException();
+			if( sqlStateClass.equals( "23" ) )
+				throw new DatastorageIntegrityConstraintException();
+			throw new SystemException( "SQLException: errorCode=" + sqle.getErrorCode() + ", SQLState=" + sqle.getSQLState(), e );
+		}
+		throw e;
+	}
+	
+	protected void update( DAS das, DataObject data )
+	{
+		try
+		{
+			das.applyChanges( data );
+			data.getChangeSummary().endLogging();
+			data.getChangeSummary().beginLogging();
+		}
+		catch( RuntimeException e ) // DAS throws RuntimeException in case of SQLException
+		{
+			handleDASException( e );
+		}
 	}
 }
