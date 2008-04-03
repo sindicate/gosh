@@ -268,11 +268,15 @@ public class Table extends Composite
 		this.errors.clear();
 		
 		this.data = (DataObjectWrapper)this.retrieve.call();
+		Assert.notNull( this.data );
 		
 		// Retrieve select data
 		for( Column column : this.columns )
 			if( column.select != null )
+			{
 				column.selectData = (List)column.select.retrieve.call();
+				Assert.notNull( column.selectData, "Data is null for column " + column.header );
+			}
 		
 		if( this.status != null )
 			this.status.setMessage( getRowCount() + " rows retrieved" );

@@ -27,6 +27,7 @@ public class ScreenSupport extends Composite implements Screen
 	
 	protected RequestContext context;
 	protected String myUrl;
+	protected boolean building;
 	protected boolean built;
 	protected boolean needsQueryString = true;
 	
@@ -48,6 +49,10 @@ public class ScreenSupport extends Composite implements Screen
 		try
 		{
 			HttpServletRequest request = context.getRequest();
+			
+			if( this.building ) // Something went wrong, reload. Specially during development.
+				return CANACCEPT.NEW;
+			
 			if( this.built )
 			{
 				if( request.getMethod().equals( "GET" ) )
@@ -146,7 +151,9 @@ public class ScreenSupport extends Composite implements Screen
 		if( !context.getRequest().getRequestURI().equals( this.myUrl ) || context.getRequest().getQueryString() != null )
 		{
 			log.debug( "Not base url" );
+			this.building = true;
 			build();
+			this.building = false;
 			this.built = true;
 			context.redirect( null );
 			return;
@@ -155,7 +162,9 @@ public class ScreenSupport extends Composite implements Screen
 		if( !this.built )
 		{
 			log.debug( "Not built yet" );
+			this.building = true;
 			build();
+			this.building = false;
 			this.built = true;
 		}
 		
