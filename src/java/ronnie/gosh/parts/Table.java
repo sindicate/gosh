@@ -198,7 +198,7 @@ public class Table extends Composite
 							for( Map.Entry entry : args.entrySet() )
 								if( entry.getValue() instanceof Closure )
 									entry.setValue( ( (Closure)entry.getValue() ).call( row ) );
-							out.print( "<a href=\"" );
+							out.print( " <a href=\"" );
 							out.print( context.link( new HashMap( args ) ) );
 							out.print( "\">" );
 							if( link.text != null )
