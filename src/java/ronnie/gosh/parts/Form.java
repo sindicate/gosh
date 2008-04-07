@@ -10,16 +10,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import org.apache.log4j.Logger;
+
 import ronnie.gosh.DatastorageIntegrityConstraintException;
 import ronnie.gosh.GroovySupport;
 import ronnie.gosh.RequestContext;
+import ronnie.gosh.Util;
 
 import com.logicacmg.idt.commons.util.Assert;
 import commonj.sdo.DataObject;
 
 public class Form extends Composite
 {
-//	static private final Logger log = Logger.getLogger( Form.class );
+	static private final Logger log = Logger.getLogger( Form.class );
 
 	static public class Value
 	{
@@ -173,6 +176,8 @@ public class Form extends Composite
 		}
 		catch( DatastorageIntegrityConstraintException e )
 		{
+			Util.transformToGroovy( e );
+			log.debug( "", e );
 			this.errors.add( "Data integrity constraints prohibit the changes from being saved" );
 			this.errors.add( "Save failed" );
 		}

@@ -17,6 +17,7 @@ import org.apache.log4j.Logger;
 import ronnie.gosh.DatastorageIntegrityConstraintException;
 import ronnie.gosh.GroovySupport;
 import ronnie.gosh.RequestContext;
+import ronnie.gosh.Util;
 
 import com.logicacmg.idt.commons.util.Assert;
 import commonj.sdo.DataObject;
@@ -255,6 +256,8 @@ public class Table extends Composite
 		}
 		catch( DatastorageIntegrityConstraintException e )
 		{
+			Util.transformToGroovy( e );
+			log.debug( "", e );
 			this.errors.add( "Data integrity constraints prohibit the changes from being saved" );
 			this.errors.add( "Save failed" );
 		}

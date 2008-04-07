@@ -81,7 +81,7 @@ public class Util
 		internalClasses = new HashSet( Arrays.asList( internalClassesArray ) );
 	}
 	
-	static void transformToGroovy( Throwable throwable )
+	static public void transformToGroovy( Throwable throwable )
 	{
 		StackTraceElement[] elements = throwable.getStackTrace();
 		int j = 0;

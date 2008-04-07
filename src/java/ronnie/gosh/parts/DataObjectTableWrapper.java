@@ -261,8 +261,15 @@ public class DataObjectTableWrapper
 	{
 		DataObject result = this.dataObject.createDataObject( this.path );
 		if( this.defaultValues != null )
+		{
+			int row = this.dataObject.getList( this.path ).size();
+			String path = "[" + row + "]/";
 			for( Entry< String, Object > entry : this.defaultValues.entrySet() )
-				set2( entry.getKey(), entry.getValue() );
+			{
+				log.debug( "Setting default value [" + path + entry.getKey() + "] = [" + entry.getValue() + "]" );
+				set2( path + entry.getKey(), entry.getValue() );
+			}
+		}
 		return result;
 	}
 }

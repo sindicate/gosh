@@ -122,11 +122,11 @@ public class GoshDataAccessSupport extends HibernateDaoSupport
 			String sqlState = sqle.getSQLState();
 			String sqlStateClass = sqlState.substring( 0, 2 );
 			if( sqlState.equals( "23502" ) )
-				throw new MissingDataException();
+				throw new MissingDataException( e );
 			if( sqlState.equals( "23503" ) )
-				throw new HasChildDependenciesException();
+				throw new HasChildDependenciesException( e );
 			if( sqlStateClass.equals( "23" ) )
-				throw new DatastorageIntegrityConstraintException();
+				throw new DatastorageIntegrityConstraintException( e );
 			throw new SystemException( "SQLException: errorCode=" + sqle.getErrorCode() + ", SQLState=" + sqle.getSQLState(), e );
 		}
 		throw e;
