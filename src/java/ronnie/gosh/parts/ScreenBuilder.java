@@ -8,8 +8,8 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.fest.assertions.Assertions;
 
-import ronnie.gosh.parts.Form.Value;
 import ronnie.gosh.parts.Table.Column;
 
 import com.logicacmg.idt.commons.NotImplementedException;
@@ -80,8 +80,16 @@ public class ScreenBuilder implements GroovyInterceptable
 		Boolean mandatory = (Boolean)args.get( "mandatory" );
 		value.mandatory = mandatory != null ? mandatory : false;
 
-		Form form = (Form)this.current;
-		form.addValue( value );
+		if( this.current instanceof Form )
+		{
+			Form form = (Form)this.current;
+			form.addValue( value );
+			return value;
+		}
+		
+		Assertions.assertThat( this.current ).isInstanceOf( Column.class );
+		Column column = (Column)this.current;
+		column.addValue( value );
 		return value;
 	}
 	
@@ -128,21 +136,26 @@ public class ScreenBuilder implements GroovyInterceptable
 
 	protected Column column( Map args )
 	{
-		Column column = new Column();
-		column.path = (String)args.get( "path" );
-		column.header = (String)args.get( "header" );
+		Value value = new Value();
+		value.path = (String)args.get( "path" );
 		Boolean edit = (Boolean)args.get( "edit" );
-		column.edit = edit != null ? edit : false;
-		Boolean key = (Boolean)args.get( "key" );
-		column.key = key != null ? key : false;
+		value.edit = edit != null ? edit : false;
+//		Boolean key = (Boolean)args.get( "key" );
+//		value.key = key != null ? key : false;
 		Select select = (Select)args.get( "select" );
-		column.select = select;
+		value.select = select;
 		Boolean mandatory = (Boolean)args.get( "mandatory" );
-		column.mandatory = mandatory != null ? mandatory : false;
+		value.mandatory = mandatory != null ? mandatory : false;
 		Boolean checkbox = (Boolean)args.get( "checkbox" );
-		column.checkbox = checkbox != null ? checkbox : false;
-		column.size = (Integer)args.get( "size" );
+		value.checkbox = checkbox != null ? checkbox : false;
+		value.size = (Integer)args.get( "size" );
 
+		Column column = new Column();
+		column.header = (String)args.get( "header" );
+		
+		if( value.path != null )
+			column.addValue( value );
+		
 		Table table = (Table)this.current;
 		table.addColumn( column );
 		return column;
@@ -156,6 +169,13 @@ public class ScreenBuilder implements GroovyInterceptable
 
 		Table table = (Table)this.current;
 		table.addColumn( column );
+		return column;
+	}
+	
+	protected Column column( Map args, Closure closure )
+	{
+		Column column = column( args );
+		callClosure( column, closure );
 		return column;
 	}
 	

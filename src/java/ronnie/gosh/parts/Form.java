@@ -24,16 +24,6 @@ public class Form extends Composite
 {
 	static private final Logger log = Logger.getLogger( Form.class );
 
-	static public class Value
-	{
-		protected String path;
-		protected String description;
-		protected boolean edit;
-		protected Select select;
-		protected List<DataObject> selectData;
-		protected boolean mandatory;
-	}
-
 	protected List< Value > values;
 	protected Closure retrieve;
 	protected Closure update;

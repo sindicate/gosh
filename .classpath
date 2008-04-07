@@ -24,6 +24,7 @@
 	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-lib-1.0-incubating.jar"/>
 	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-tools-1.0-incubating.jar"/>
 	<classpathentry kind="lib" path="tools/test/testng-5.7-jdk15.jar"/>
+	<classpathentry kind="lib" path="lib/compile/fest-assert-1.0a1.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry exported="true" kind="lib" path="groovy-bin"/>
 	<classpathentry kind="output" path="bin"/>

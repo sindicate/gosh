@@ -28,21 +28,18 @@ public class Table extends Composite
 
 	static public class Column
 	{
-		protected String path;
 		protected String header;
-		protected boolean edit;
-		protected boolean key;
-		protected Select select;
-		protected List<DataObject> selectData;
-		protected boolean mandatory;
 		protected List things = new ArrayList();
 		protected boolean delete;
-		protected boolean checkbox; // TODO Change to type, inherit from SDO\
-		protected Integer size;
 		
 		public void addLink( Link link )
 		{
 			this.things.add( link );
+		}
+
+		public void addValue( Value value )
+		{
+			this.things.add( value );
 		}
 	}
 
@@ -107,88 +104,27 @@ public class Table extends Composite
 			out.print( "	<tr class=\"row\">\n" );
 			for( Column column : this.columns )
 			{
-				if( column.path != null )
-				{
-					String fieldPath = rowPath + column.path;
-					Object value = null;
-					if( shadow != null && shadow.containsKey( fieldPath ) )
-						value = shadow.get( fieldPath );
-					else if( row.isSet( column.path ) )
-						value = row.get( column.path );
-					log.debug( "value for " + column.path + ": " + ( value == null ? "(null)" : value.getClass() ) );
-					
-					if( column.edit )
-					{
-						out.print( "		<td class=\"edit\">" );
-						if( column.select != null )
-						{
-							out.print( "<select name=\"" );
-							out.print( path );
-							out.print( fieldPath );
-							out.print( "\">" );
-							if( value == null || !column.mandatory )
-							{
-								out.print( "<option value=\"\" selected=\"selected\">" );
-								if( column.mandatory )
-									out.print( "(select)" );
-								else
-									out.print( "&nbsp;" );
-								out.print( "</option>" );
-							}
-							for( DataObject object : column.selectData )
-							{
-								out.print( "<option value=\"" );
-								Object key = object.get( column.select.key ); 
-								out.print( key );
-								if( value != null && key.equals( value ) )
-									out.print( "\" selected=\"selected\">" );
-								else
-									out.print( "\">" );
-								out.print( object.get( column.select.display ) );
-								out.print( "</option>" );
-							}
-							out.print( "</select>" );
-						}
-						else if( column.checkbox )
-						{
-							out.print( "<input type=\"checkbox\" name=\"" );
-							out.print( path );
-							out.print( fieldPath );
-							out.print( "\" value=\"true\"" ); // TODO If checkbox is unchecked, we don't get a value
-							if( value != null && ( (Boolean)value ).booleanValue() )
-								out.print( " checked=\"checked\"" );
-							out.print( "/>" );
-						}
-						else
-						{
-							out.print( "<input name=\"" );
-							out.print( path );
-							out.print( fieldPath );
-							out.print( "\" value=\"" );
-							print( context, out, value );
-							if( column.size != null )
-							{
-								out.print( "\" size=\"" );
-								out.print( column.size );
-							}
-							out.print( "\"/>" );
-						}
-					}
-					else
-					{
-						out.print( "		<td>" );
-						print( context, out, value );
-					}
-				}
-				else if( column.delete )
+				if( column.delete )
 				{
 					out.print( "		<td class=\"edit\">" );
 					this.removeButton.render( context, Integer.toString( i ) );
 				}
 				else
 				{
+					boolean containsInputs = false;
+					for( Object child : column.things )
+						if( child instanceof Value )
+							if( ( (Value)child ).edit && !( (Value)child ).checkbox )
+							{
+								containsInputs = true;
+								break;
+							}
+					
 					// TODO Implement interface Renderable
-					out.print( "		<td>" );
+					if( containsInputs )
+						out.print( "		<td class=\"edit\">" );
+					else
+						out.print( "		<td>" );
 					for( Object child : column.things )
 					{
 						if( child instanceof Link )
@@ -207,6 +143,80 @@ public class Table extends Composite
 							else
 								out.print( link.html );
 							out.print( "</a>" );
+						}
+						else if( child instanceof Value )
+						{
+							Value value = (Value)child;
+							String fieldPath = rowPath + value.path;
+							Object value2 = null;
+							if( shadow != null && shadow.containsKey( fieldPath ) )
+								value2 = shadow.get( fieldPath );
+							else if( row.isSet( value.path ) )
+								value2 = row.get( value.path );
+							log.debug( "value for " + value.path + ": " + ( value2 == null ? "(null)" : value2.getClass() ) );
+							
+							if( value.edit )
+							{
+//								out.print( "		<td class=\"edit\">" );
+								if( value.select != null )
+								{
+									out.print( " <select name=\"" );
+									out.print( path );
+									out.print( fieldPath );
+									out.print( "\">" );
+									if( value2 == null || !value.mandatory )
+									{
+										out.print( "<option value=\"\" selected=\"selected\">" );
+										if( value.mandatory )
+											out.print( "(select)" );
+										else
+											out.print( "&nbsp;" );
+										out.print( "</option>" );
+									}
+									for( DataObject object : value.selectData )
+									{
+										out.print( "<option value=\"" );
+										Object key = object.get( value.select.key ); 
+										out.print( key );
+										if( value2 != null && key.equals( value2 ) )
+											out.print( "\" selected=\"selected\">" );
+										else
+											out.print( "\">" );
+										out.print( object.get( value.select.display ) );
+										out.print( "</option>" );
+									}
+									out.print( "</select>" );
+								}
+								else if( value.checkbox )
+								{
+									out.print( " <input type=\"checkbox\" name=\"" );
+									out.print( path );
+									out.print( fieldPath );
+									out.print( "\" value=\"true\"" ); // TODO If checkbox is unchecked, we don't get a value
+									if( value2 != null && ( (Boolean)value2 ).booleanValue() )
+										out.print( " checked=\"checked\"" );
+									out.print( "/>" );
+								}
+								else
+								{
+									out.print( " <input name=\"" );
+									out.print( path );
+									out.print( fieldPath );
+									out.print( "\" value=\"" );
+									print( context, out, value2 );
+									if( value.size != null )
+									{
+										out.print( "\" size=\"" );
+										out.print( value.size );
+									}
+									out.print( "\"/>" );
+								}
+							}
+							else
+							{
+//								out.print( "		<td>" );
+								print( context, out, value2 );
+							}
 						}
 					}
 				}
@@ -272,11 +282,16 @@ public class Table extends Composite
 		
 		// Retrieve select data
 		for( Column column : this.columns )
-			if( column.select != null )
-			{
-				column.selectData = (List)column.select.retrieve.call();
-				Assert.notNull( column.selectData, "Data is null for column " + column.header );
-			}
+			for( Object child : column.things )
+				if( child instanceof Value )
+				{
+					Value value = (Value)child;
+					if( value.select != null )
+					{
+						value.selectData = (List)value.select.retrieve.call();
+						Assert.notNull( value.selectData, "Data is null for column " + column.header );
+					}
+				}
 		
 		if( this.status != null )
 			this.status.setMessage( getRowCount() + " rows retrieved" );
@@ -292,14 +307,18 @@ public class Table extends Composite
 		{
 			String rowPath = "[" + i + "]/";
 			for( Column column : this.columns )
-				if( column.path != null )
-					if( column.edit && column.checkbox )
+				for( Object child : column.things )
+					if( child instanceof Value )
 					{
-						Object value = row.get( column.path );
-						if( value != null && ( (Boolean)value ).booleanValue() )
+						Value value = (Value)child;
+						if( value.edit && value.checkbox )
 						{
-							result.add( rowPath + column.path );
-							log.debug( "Collected checkbox [" + rowPath + column.path + "]" );
+							Object value2 = row.get( value.path );
+							if( value2 != null && ( (Boolean)value2 ).booleanValue() )
+							{
+								result.add( rowPath + value.path );
+								log.debug( "Collected checkbox [" + rowPath + value.path + "]" );
+							}
 						}
 					}
 			i++;
@@ -336,18 +355,19 @@ public class Table extends Composite
 				String prop2 = prop.substring( pos + 1 );
 				Assert.isTrue( prop2.startsWith( "/" ) );
 				prop2 = prop2.substring( 1 );
-				Column column = null;
+				Value value = null;
 //				log.debug( "Finding column [" + prop2 + "]" );
 				for( Column c : this.columns )
-				{
-//					log.debug( "    Column [" + c.path + "]" );
-					if( prop2.equals( c.path ) )
-					{
-						column = c;
-						break;
-					}
-				}
-				Assert.notNull( column );
+					for( Object child : c.things )
+						if( child instanceof Value )
+						{
+							if( prop2.equals( ( (Value)child ).path ) )
+							{
+								value = (Value)child;
+								break;
+							}
+						}
+				Assert.notNull( value );
 				this.data.setString( prop, values[ 0 ] );
 				checked.remove( prop ); // Remove from checked list
 			}
@@ -365,9 +385,14 @@ public class Table extends Composite
 	{
 		for( DataObject object : this.data.getRows() )
 			for( Column column : this.columns )
-				if( column.mandatory )
-					if( !object.isSet( column.path ) || object.get( column.path ) == null )
-						this.errors.add( "Missing value for " + column.header );
+				for( Object child : column.things )
+					if( child instanceof Value )
+					{
+						Value value = (Value)child;
+						if( value.mandatory )
+							if( !object.isSet( value.path ) || object.get( value.path ) == null )
+								this.errors.add( "Missing value for " + column.header );
+					}
 	}
 
 	public DataObject addRow()
