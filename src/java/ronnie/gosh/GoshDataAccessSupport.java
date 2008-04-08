@@ -6,15 +6,21 @@ import groovy.lang.GString;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
+import org.apache.tuscany.das.rdb.Command;
 import org.apache.tuscany.das.rdb.DAS;
+import org.apache.tuscany.das.rdb.config.Config;
 import org.apache.tuscany.das.rdb.config.impl.ResultDescriptorImpl;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+
+import ronnie.gosh.parts.DataObjectTableWrapper;
 
 import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.util.Assert;
@@ -154,5 +160,92 @@ public class GoshDataAccessSupport extends HibernateDaoSupport
 				return setting.getValue();
 		
 		throw new SystemException( "Old value for [" + name + "] not found" );
+	}
+	
+	protected List< DataObject > queryList( Map args )
+	{
+		Command select = buildCommand( args );
+
+		String table = (String)args.get( "table" );
+		return select.executeQuery().getList( table );
+	}
+	
+	protected DataObjectTableWrapper queryForEdit( Map args )
+	{
+		Command select = buildCommand( args );
+		
+		String table = (String)args.get( "table" );
+		Map< String, String > columns = (Map)args.get( "columns" );
+
+		DataObjectTableWrapper wrapper = new DataObjectTableWrapper( select.executeQuery(), table );
+		for( Entry< String, String > column : columns.entrySet() )
+			if( column.getValue().equals( "vwt.Timestamp" ) )
+				wrapper.addTimestamp( column.getKey() );
+		
+		return wrapper;
+	}
+	
+	protected DataObject queryOne( Map args )
+	{
+		Command select = buildCommand( args );
+		
+		String table = (String)args.get( "table" );
+		DataObject data = select.executeQuery();
+		return data.getDataObject( table + "[1]" );
+	}
+	
+	protected Command buildCommand( Map args )
+	{
+		String table = (String)args.get( "table" );
+		Map< String, String > columns = (Map)args.get( "columns" );
+		Connection connection = (Connection)args.get( "connection" );
+		Config config = (Config)args.get( "config" );
+		String order = (String)args.get( "order" );
+		Map< String, Object > constraints = (Map)args.get( "constraints" );
+		
+		DAS das = DAS.FACTORY.createDAS( config, connection );
+		
+		StringBuilder sql = new StringBuilder( "SELECT " );
+		List resultSetDescriptor = new ArrayList();
+		boolean first = true;
+		for( Entry< String, String > column : columns.entrySet() )
+		{
+			if( first )
+				first = false;
+			else
+				sql.append( ", " );
+			sql.append( column.getKey() );
+			String type = column.getValue();
+			if( type.equals( "vwt.Timestamp" ) )
+				type = "commonj.sdo.Date";
+			addFieldDescriptor( resultSetDescriptor, table, column.getKey(), type );
+		}
+		sql.append( " FROM " ).append( table );
+		if( constraints != null )
+		{
+			sql.append( " WHERE " );
+			first = true;
+			for( Entry< String, Object > constraint : constraints.entrySet() )
+			{
+				if( first )
+					first = false;
+				else
+					sql.append( " AND " );
+				sql.append( constraint.getKey() ).append( "=?" );
+			}
+		}
+		if( order != null )
+			sql.append( " ORDER BY " ).append( order );
+		
+		Command select = das.createCommand( sql.toString() );
+		select.setResultDescriptors( resultSetDescriptor );
+		if( constraints != null )
+		{
+			int i = 1;
+			for( Entry< String, Object > constraint : constraints.entrySet() )
+				select.setParameter( i++, constraint.getValue() );
+		}
+		
+		return select;
 	}
 }
