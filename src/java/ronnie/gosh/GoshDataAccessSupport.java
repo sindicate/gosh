@@ -19,6 +19,7 @@ import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.util.Assert;
 import commonj.sdo.DataObject;
+import commonj.sdo.ChangeSummary.Setting;
 
 public class GoshDataAccessSupport extends HibernateDaoSupport
 {
@@ -144,5 +145,14 @@ public class GoshDataAccessSupport extends HibernateDaoSupport
 		{
 			handleDASException( e );
 		}
+	}
+	
+	protected Object getOldValue( List< Setting > oldValues, String name )
+	{
+		for( Setting setting : oldValues )
+			if( setting.getProperty().getName().equals( name ) )
+				return setting.getValue();
+		
+		throw new SystemException( "Old value for [" + name + "] not found" );
 	}
 }
