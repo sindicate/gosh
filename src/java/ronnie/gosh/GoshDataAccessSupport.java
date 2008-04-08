@@ -16,6 +16,7 @@ import org.apache.tuscany.das.rdb.Command;
 import org.apache.tuscany.das.rdb.DAS;
 import org.apache.tuscany.das.rdb.config.Config;
 import org.apache.tuscany.das.rdb.config.impl.ResultDescriptorImpl;
+import org.fest.assertions.Assertions;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
@@ -110,6 +111,14 @@ public class GoshDataAccessSupport extends HibernateDaoSupport
 		return query.uniqueResult();
 	}
 	
+	// ---- DAS methods ---- //
+	
+	static final public String COMMONJ_STRING = "commonj.sdo.String";
+	static final public String COMMONJ_BOOLEAN = "commonj.sdo.Boolean";
+	static final public String COMMONJ_DATE = "commonj.sdo.Date";
+	static final public String COMMONJ_INT = "commonj.sdo.Int";
+	static final public String VWT_TIMESTAMP = "vwt.Timestamp";
+	
 	static protected void addFieldDescriptor( List descriptor, String table, String column, String type )
 	{
 		ResultDescriptorImpl fieldDescriptor = new ResultDescriptorImpl();
@@ -203,6 +212,9 @@ public class GoshDataAccessSupport extends HibernateDaoSupport
 		String order = (String)args.get( "order" );
 		Map< String, Object > constraints = (Map)args.get( "constraints" );
 		
+		Assertions.assertThat( connection ).isNotNull();
+		Assertions.assertThat( config ).isNotNull();
+
 		DAS das = DAS.FACTORY.createDAS( config, connection );
 		
 		StringBuilder sql = new StringBuilder( "SELECT " );
