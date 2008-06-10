@@ -18,7 +18,6 @@
 	<classpathentry kind="lib" path="lib/compile/eclipse-emf-ecore-change-2.2.3.jar"/>
 	<classpathentry kind="lib" path="lib/compile/eclipse-emf-ecore-xmi-2.2.3.jar"/>
 	<classpathentry kind="lib" path="lib/compile/eclipse-xsd-2.2.3.jar"/>
-	<classpathentry kind="lib" path="lib/compile/tuscany-das-rdb-1.0-incubating-beta2.jar"/>
 	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-api-r2.1-1.0-incubating.jar"/>
 	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-impl-1.0-incubating.jar"/>
 	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-lib-1.0-incubating.jar"/>
