@@ -1,5 +1,6 @@
 package ronnie.gosh;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -63,7 +64,14 @@ public class QueryManager
 				if( url == null )
 					throw new QueryNotFoundException( file + " not found in classpath" );
 				resource = new UrlResource( url );
-				lastModified = resource.getFile().lastModified(); // TODO LastModified does not work when packed in a war
+				try
+				{
+					lastModified = resource.getFile().lastModified();
+				}
+				catch( FileNotFoundException e )
+				{
+					// Must be packed in a jar of some kind. lastModified stays 0, which means no reloading will be tried.
+				}
 				__LOGGER.debug( resource.getDescription() + ", lastModified: " + new Date( lastModified ) + " (" + lastModified + ")" );
 			}
 			
