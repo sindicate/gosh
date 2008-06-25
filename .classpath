@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src/java"/>
 	<classpathentry kind="src" path="src/test"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jre1.6"/>
 	<classpathentry kind="lib" path="lib/compile/log4j-1.2.15.jar"/>
 	<classpathentry kind="lib" path="lib/compile/spring-2.5.jar"/>
 	<classpathentry kind="lib" path="lib/compile/jsp-api.jar"/>
@@ -12,16 +12,17 @@
 	<classpathentry kind="lib" path="lib/compile/standard-2.4.jar"/>
 	<classpathentry kind="lib" path="lib/compile/idt-commons-2.0.140.jar"/>
 	<classpathentry kind="lib" path="lib/compile/hibernate-3.2.5.jar"/>
-	<classpathentry kind="lib" path="lib/compile/groovy-all-1.5.4.jar"/>
+	<classpathentry kind="lib" path="lib/compile/groovy-all-1.5.6.jar"/>
 	<classpathentry kind="lib" path="lib/compile/eclipse-emf-common-2.2.3.jar"/>
 	<classpathentry kind="lib" path="lib/compile/eclipse-emf-ecore-2.2.3.jar"/>
 	<classpathentry kind="lib" path="lib/compile/eclipse-emf-ecore-change-2.2.3.jar"/>
 	<classpathentry kind="lib" path="lib/compile/eclipse-emf-ecore-xmi-2.2.3.jar"/>
 	<classpathentry kind="lib" path="lib/compile/eclipse-xsd-2.2.3.jar"/>
-	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-api-r2.1-1.0-incubating.jar"/>
-	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-impl-1.0-incubating.jar"/>
-	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-lib-1.0-incubating.jar"/>
-	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-tools-1.0-incubating.jar"/>
+	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-api-r2.1-1.1-incubating.jar"/>
+	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-impl-1.1-incubating.jar"/>
+	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-lib-1.1-incubating.jar"/>
+	<classpathentry kind="lib" path="lib/compile/tuscany-sdo-tools-1.1-incubating.jar"/>
+	<classpathentry kind="lib" path="lib/compile/tuscany-das-rdb-1.0-incubating-beta2.jar"/>
 	<classpathentry kind="lib" path="tools/test/testng-5.7-jdk15.jar"/>
 	<classpathentry kind="lib" path="lib/compile/fest-assert-1.0a1.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>

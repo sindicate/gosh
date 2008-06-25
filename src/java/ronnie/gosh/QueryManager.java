@@ -3,40 +3,35 @@ package ronnie.gosh;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URL;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 
 import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.util.Assert;
 
 
 // TODO Change detection
-public class QueryManager implements ApplicationContextAware
+public class QueryManager
 {
 	static final private Logger __LOGGER = Logger.getLogger( QueryManager.class );
 	
-	protected ApplicationContext applicationContext;
 	protected String packag;
 	protected String packageSlashed;
 	protected boolean reloading;
 	protected Map< String, CompiledQuery > queries = new HashMap();
 
-	public void setApplicationContext( ApplicationContext context )
-	{
-		this.applicationContext = context;
-	}
-
 	public void setPackage( String packag )
 	{
+		Assert.isTrue( !packag.startsWith( "." ) && !packag.endsWith( "." ), "path should not start or end with a ." );
+
 		this.packag = packag;
-		this.packageSlashed = packag.replaceAll( "\\.", "/" );
+		this.packageSlashed = packag.replaceAll( "\\.", "/" ) + "/";
 	}
 	
 	public void setReloading( boolean reloading )
@@ -49,30 +44,39 @@ public class QueryManager implements ApplicationContextAware
 	{
 		__LOGGER.debug( "getQuery [" + path + "]" );
 		
-		Assert.isTrue( path.startsWith( "/" ) );
+		Assert.isTrue( !path.startsWith( "/" ), "path should not start with a /" );
 
 		try
 		{
 			CompiledQuery query = this.queries.get( path );
-			
+
 			Resource resource = null;
 			long lastModified = 0;
+			
+			// If reloading == true or query not initialized yet, get the resource
 			if( this.reloading || query == null )
 			{
-				String file = "/WEB-INF/classes/" + this.packageSlashed + path + ".gsql";
-				resource = this.applicationContext.getResource( file );
+				String file = this.packageSlashed + path + ".gsql";
+				//ClassLoader loader = Thread.currentThread().getContextClassLoader();
+				ClassLoader loader = getClass().getClassLoader();
+				URL url = loader.getResource( file );
+				if( url == null )
+					throw new QueryNotFoundException( file + " not found in classpath" );
+				resource = new UrlResource( url );
 				lastModified = resource.getFile().lastModified(); // TODO LastModified does not work when packed in a war
 				__LOGGER.debug( resource.getDescription() + ", lastModified: " + new Date( lastModified ) + " (" + lastModified + ")" );
 			}
 			
+			// If reloading == true and resource is changed, clear current query
 			if( this.reloading )
 				if( query != null && query.lastModified > 0 )
-					if( resource.exists() && lastModified > query.lastModified )
+					if( resource != null && resource.exists() && lastModified > query.lastModified )
 					{
 						__LOGGER.info( resource.getDescription() + " changed, reloading" );
 						query = null;
 					}
 
+			// Compile the query if needed
 			if( query == null )
 			{
 				if( !resource.exists() )
