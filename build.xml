@@ -146,11 +146,11 @@
 		</jar>
 	</target>
 
-	<target name="jar-versioned" depends="build,jar,updateversion"> <!-- Builds the jar file -->
+	<target name="jar-versioned" depends="build,jar"> <!-- Builds the jar file -->
 		<copy file="${build.dist}/${ant.project.name}.jar" preservelastmodified="yes" tofile="${build.dist}/${ant.project.name}-${module.version}.jar"/>
 	</target>
 
-	<target name="srcjar" depends="updateversion"> <!-- Builds the src jar file -->
+	<target name="srcjar"> <!-- Builds the src jar file -->
 		<mkdir dir="${build.dist}"/>
 		<jar destfile="${build.dist}/${ant.project.name}-${module.version}-src.jar" compress="true">
 			<fileset dir="${src.java}" includes="**/*.java"/>
@@ -166,7 +166,7 @@
 		</javadoc>
 	</target>
 
-	<target name="javadocjar" depends="javadoc,updateversion" description="Builds a javadoc jar">
+	<target name="javadocjar" depends="javadoc" description="Builds a javadoc jar">
 		<jar destfile="${build.dist}/${ant.project.name}-${module.version}-javadoc.jar" compress="true">
 			<fileset dir="${build.dist}/doc/api/"/>
 			<manifest>
@@ -175,6 +175,6 @@
 		</jar>
 	</target>
 
-	<target name="dist" depends="clean,test,jar-versioned,srcjar,javadocjar" description="Builds a distribution"/>
+	<target name="dist" depends="clean,updateversion,test,jar-versioned,srcjar,javadocjar" description="Builds a distribution"/>
 
 </project>
