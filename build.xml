@@ -88,7 +88,7 @@
 
 	<target name="build" depends="compile"> <!-- Prepares the jar folder -->
 		<copy todir="${build.home}/classes/" preservelastmodified="yes">
-			<fileset dir="${src.java}" excludes="**/*.java,**/*.class"/>
+			<fileset dir="${src.java}" excludes="**/*.java,**/*.class,**/*.groovy"/>
 		</copy>
 	</target>
 
