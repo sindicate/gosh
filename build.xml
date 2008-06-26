@@ -175,6 +175,6 @@
 		</jar>
 	</target>
 
-	<target name="dist" depends="clean,jar-versioned,srcjar,javadocjar" description="Builds a distribution"/>
+	<target name="dist" depends="clean,test,jar-versioned,srcjar,javadocjar" description="Builds a distribution"/>
 
 </project>
