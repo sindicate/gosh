@@ -35,6 +35,17 @@ public class ManagerTest
 		assert query.getLastModified() == 0;
 	}
 	
+	@Test
+	public void testInFolderWithSpaces()
+	{
+		QueryManager manager = new QueryManager();
+		manager.setPackage( "" );
+		CompiledQuery query = manager.getQuery( "testQuery-in-folder-with-spaces" );
+		assert query != null;
+		assert "ronnie.gosh.tmp.gsql.testQuery_in_folder_with_spaces$_getClosure_closure1".equals( query.getQuery().getClass().getName() );
+		assert query.getLastModified() > 0;
+	}
+	
 	static public void main( String[] args )
 	{
 		new ManagerTest().testSimple();

@@ -104,14 +104,31 @@ public class Query
 	}
 	*/
 	
-	public List< Map > list()
+	/**
+	 * @param compressed 
+	 * @return a List of Maps for each record retrieved from the query.
+	 * @see #list(Connection, boolean)
+	 */
+	public List< Map > list( boolean compressed )
 	{
 		if( this.connection == null )
 			throw new IllegalArgumentException( "Connection not set" );
-		return list( this.connection );
+		return list( this.connection, compressed );
 	}
-	
-	public List< Map > list( Connection connection )
+
+	/**
+	 * Returns a List of Maps containing all the records retrieved from the query. If the compressed parameter is true,
+	 * memory usage will be reduced considerably by storing equal values only once. This is particularly valuable when
+	 * the query returns lots of duplicate values. Also, nulls are not stored in the map when the compressed parameter
+	 * is true.
+	 * 
+	 * @param connection
+	 * @param compressed When true, memory usage will be reduced considerably by storing equal values only once. This is
+	 *            particularly valuable when the query returns lots of duplicate values. Also, nulls are not stored in
+	 *            the map when the compressed parameter is true.
+	 * @return a List of Maps for each record retrieved from the query.
+	 */
+	public List< Map > list( Connection connection, boolean compressed )
 	{
 		try
 		{
@@ -125,35 +142,113 @@ public class Query
 			for( int col = 1; col <= columnCount; col++ )
 				columnNames[ col ] = metaData.getColumnName( col ).toLowerCase( Locale.ENGLISH );
 			
-			int count = 0;
 			ArrayList result = new ArrayList();
 	
-			// THIS CAN REDUCE MEMORY USAGE WITH 90 TO 95 PERCENT, PERFORMANCE IMPACT IS ONLY 5 PERCENT
-	
-			HashMap sharedData = new HashMap();
-			while( resultSet.next() )
+			if( compressed )
 			{
-				HashMap line = new HashMap( columnCount );
-				for( int col = 1; col <= columnCount; col++ )
+				// THIS CAN REDUCE MEMORY USAGE WITH 90 TO 95 PERCENT, PERFORMANCE IMPACT IS ONLY 5 PERCENT
+		
+				HashMap sharedData = new HashMap();
+				while( resultSet.next() )
 				{
-					Object object = resultSet.getObject( col );
-					if( object != null )
+					HashMap line = new HashMap( columnCount );
+					for( int col = 1; col <= columnCount; col++ )
 					{
-						Object temp = sharedData.get( object );
-						if( temp != null )
-							line.put( columnNames[ col ], temp );
-						else
+						Object object = resultSet.getObject( col );
+						if( object != null )
 						{
-							sharedData.put( object, object );
-							line.put( columnNames[ col ], object );
+							Object temp = sharedData.get( object );
+							if( temp != null )
+								line.put( columnNames[ col ], temp );
+							else
+							{
+								sharedData.put( object, object );
+								line.put( columnNames[ col ], object );
+							}
 						}
 					}
+					result.add( line );
 				}
-				result.add( line );
-				count++;
+			}
+			else
+			{
+				while( resultSet.next() )
+				{
+					HashMap line = new HashMap( columnCount );
+					for( int col = 1; col <= columnCount; col++ )
+					{
+						Object object = resultSet.getObject( col );
+						line.put( columnNames[ col ], object );
+					}
+					result.add( line );
+				}
 			}
 			
 			return result;
+		}
+		catch( SQLException e )
+		{
+			throw new SystemException( e );
+		}
+	}
+	
+	/**
+	 * Executes an update (DML) or a DDL query.
+	 * 
+	 * @return either (1) the row count for a DML statement or (2) 0 for SQL statements that return nothing
+	 * @throws SQLException
+	 * @see PreparedStatement#executeUpdate()
+	 */
+	public int updateChecked() throws SQLException
+	{
+		if( this.connection == null )
+			throw new IllegalArgumentException( "Connection not set" );
+		return updateChecked( this.connection );
+	}
+	
+	/**
+	 * Executes an update (DML) or a DDL query through the given connection.
+	 * 
+	 * @param connection
+	 * @return either (1) the row count for a DML statement or (2) 0 for SQL statements that return nothing
+	 * @throws SQLException
+	 * @see PreparedStatement#executeUpdate()
+	 */
+	public int updateChecked( Connection connection ) throws SQLException
+	{
+		return getStatement( connection ).executeUpdate();
+	}
+	
+	/**
+	 * Executes an update (DML) or a DDL query through the given connection.
+	 * 
+	 * @param connection
+	 * @return either (1) the row count for a DML statement or (2) 0 for SQL statements that return nothing
+	 * @see PreparedStatement#executeUpdate()
+	 */
+	public int update( Connection connection )
+	{
+		try
+		{
+			return updateChecked( connection );
+		}
+		catch( SQLException e )
+		{
+			throw new SystemException( e );
+		}
+	}
+	
+	/**
+	 * Executes an update (DML) or a DDL query.
+	 * 
+	 * @return either (1) the row count for a DML statement or (2) 0 for SQL statements that return nothing
+	 * @see PreparedStatement#executeUpdate()
+	 */
+	public int update()
+	{
+		try
+		{
+			return updateChecked();
 		}
 		catch( SQLException e )
 		{

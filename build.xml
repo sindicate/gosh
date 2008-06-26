@@ -36,6 +36,7 @@
 	<path id="test.classpath">
 		<path refid="compiletest.classpath"/>
 		<pathelement location="${build.home}/test-classes/"/>
+		<pathelement location="src/folder with spaces/"/>
 	</path>
 
 	<path id="cobertura.classpath">

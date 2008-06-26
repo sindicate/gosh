@@ -23,7 +23,7 @@ public class QueryManager
 	static final private Logger __LOGGER = Logger.getLogger( QueryManager.class );
 	
 	protected String packag;
-	protected String packageSlashed;
+	protected String packageSlashed = ""; // when setPackage is not called
 	protected boolean reloading;
 	protected Map< String, CompiledQuery > queries = new HashMap();
 
@@ -32,7 +32,10 @@ public class QueryManager
 		Assert.isTrue( !packag.startsWith( "." ) && !packag.endsWith( "." ), "path should not start or end with a ." );
 
 		this.packag = packag;
-		this.packageSlashed = packag.replaceAll( "\\.", "/" ) + "/";
+		if( packag.length() > 0 )
+			this.packageSlashed = packag.replaceAll( "\\.", "/" ) + "/";
+		else
+			this.packageSlashed = "";
 	}
 	
 	public void setReloading( boolean reloading )
@@ -70,7 +73,8 @@ public class QueryManager
 				}
 				catch( FileNotFoundException e )
 				{
-					// Must be packed in a jar of some kind. lastModified stays 0, which means no reloading will be tried.
+					// Appearantly the resource is packed in a jar of some kind.
+					// lastModified stays 0, which means no reloading will be tried.
 				}
 				__LOGGER.debug( resource.getDescription() + ", lastModified: " + new Date( lastModified ) + " (" + lastModified + ")" );
 			}
