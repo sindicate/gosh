@@ -109,7 +109,7 @@ public class Query
 	 * @return a List of Maps for each record retrieved from the query.
 	 * @see #list(Connection, boolean)
 	 */
-	public List< Map > list( boolean compressed )
+	public List< Map< String, Object > > list( boolean compressed )
 	{
 		if( this.connection == null )
 			throw new IllegalArgumentException( "Connection not set" );
@@ -128,7 +128,7 @@ public class Query
 	 *            the map when the compressed parameter is true.
 	 * @return a List of Maps for each record retrieved from the query.
 	 */
-	public List< Map > list( Connection connection, boolean compressed )
+	public List< Map< String, Object > > list( Connection connection, boolean compressed )
 	{
 		try
 		{
