@@ -18,7 +18,7 @@
 	
 	<property name="tool.cobertura" value="tools/cobertura/"/>
 
-	<property name="build.home" value="../BUILD/${ant.project.name}/"/>
+	<property name="build.home" value="../BUILDS/${ant.project.name}/"/>
 	<property name="build.dist" value="${build.home}/dist/"/>
 	
 	<!-- Classpaths -->
