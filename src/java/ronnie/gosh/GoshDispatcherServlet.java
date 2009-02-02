@@ -14,7 +14,6 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
 import com.logicacmg.idt.commons.SystemException;
-import com.logicacmg.idt.commons.servlet.HttpUtil;
 
 public class GoshDispatcherServlet extends HttpServlet
 {
@@ -65,9 +64,7 @@ public class GoshDispatcherServlet extends HttpServlet
 		
 		try
 		{
-			HttpUtil.logRequest( log, request );
 			doService( request, response );
-			HttpUtil.logResponse( log, response );
 		}
 		catch( Exception e )
 		{

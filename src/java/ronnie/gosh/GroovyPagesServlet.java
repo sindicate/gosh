@@ -8,13 +8,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
-
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.context.support.XmlWebApplicationContext;
-
-import com.logicacmg.idt.commons.servlet.HttpUtil;
 
 public class GroovyPagesServlet extends HttpServlet
 {
@@ -47,11 +44,7 @@ public class GroovyPagesServlet extends HttpServlet
 	@Override
 	public void doGet( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException
 	{
-		HttpUtil.logRequest( __LOGGER, request );
-
 		String servletPath = request.getServletPath();
 		this.applicationContext.call( servletPath, request, response );
-		
-		HttpUtil.logResponse( __LOGGER, response );
 	}
 }
