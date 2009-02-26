@@ -2,19 +2,16 @@ package ronnie.gosh.parts;
 
 import groovy.lang.Closure;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
+import org.hibernate.engine.Collections;
+import org.hibernate.mapping.Map;
 
 import ronnie.gosh.GroovySupport;
 import ronnie.gosh.RequestContext;
+import ronnie.gosh.parts.Screen.CANACCEPT;
 
 import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.util.Assert;
@@ -203,7 +200,7 @@ public class ScreenSupport extends Composite implements Screen
 		// no-store is the one that prevents back-button caching, no-cache has nothing to do with it.
 		// BUT!!!, IE6 does not work correctly with no-store, so we add no-cache for IE6 only.
 		response.setHeader( "Cache-Control", "no-cache" ); // Needed for IE6
-		response.setHeader( "Cache-Control", "no-store" ); // no-store prevents back-button caching in both IE7 and Firefox
+		response.addHeader( "Cache-Control", "no-store" ); // no-store prevents back-button caching in both IE7 and Firefox
 
 		GroovySupport.callHook( this, "render", this.context );
 	}
