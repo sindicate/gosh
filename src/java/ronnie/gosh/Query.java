@@ -140,7 +140,7 @@ public class Query
 			// DETERMINE THE LOWERCASE NAMES IN ADVANCE!!! Otherwise the names will not be shared in memory.
 			String[] columnNames = new String[ columnCount + 1 ];
 			for( int col = 1; col <= columnCount; col++ )
-				columnNames[ col ] = metaData.getColumnName( col ).toLowerCase( Locale.ENGLISH );
+				columnNames[ col ] = metaData.getColumnLabel( col ).toLowerCase( Locale.ENGLISH );
 			
 			ArrayList result = new ArrayList();
 	

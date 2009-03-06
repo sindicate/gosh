@@ -2,16 +2,19 @@ package ronnie.gosh.parts;
 
 import groovy.lang.Closure;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
-import org.hibernate.engine.Collections;
-import org.hibernate.mapping.Map;
 
 import ronnie.gosh.GroovySupport;
 import ronnie.gosh.RequestContext;
-import ronnie.gosh.parts.Screen.CANACCEPT;
 
 import com.logicacmg.idt.commons.SystemException;
 import com.logicacmg.idt.commons.util.Assert;
