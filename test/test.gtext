@@ -1,0 +1,30 @@
+<# def var1 = "Test text"
+#>Meisjes filmden ernstige mishandeling
+Uitgegeven: 15 januari 2008 18:03
+Laatst gewijzigd: 15 januari 2008 18:05
+
+OOSTERHOUT - De  politie heeft maandag vijf meisjes (13 tot en met 15 jaar) uit Oosterhout aangehouden die inmiddels worden verdacht van drie ernstige mishandelingen van plaatsgenootjes.
+
+<# 3.times {
+#>De politie ontdekte  dinsdag op de mobiele telefoon van een van de verdachten beelden van een mishandeling die heeft plaatsgevonden op 26 oktober. De recherche is nog op zoek naar het slachtoffer.
+<# }
+#>
+
+<#= "Op het filmpje is te zien dat het slachtoffer tijdens 
+de mishandeling op de grond valt en vervolgens tegen haar hoofd geschopt 
+wordt. Het meisje van ongeveer 16 of 17 jaar oud liep daarbij 
+een bloedende wond op in haar gezicht, maakte een woordvoerder bekend." #>
+
+Test1: ${"<br/>"}
+Test2: ${"${var1}"}
+Test3: <# out << var1 #>
+Test4: """"""""""<# out << var1 #>""""""""""
+Test5: <<# out << var1 #>
+Test6: <#= "#>" #>
+Test6: <#= '#>' #>
+
+(c) ANP
+
+${kjhfkjhff}
+
+<#-- This is a comment --#>

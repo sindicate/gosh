@@ -1,0 +1,107 @@
+<%
+def session = request.getSession( false )
+if( session ) assert session.user
+%>
+<% withTemplate( page: "/main.ghtml", title: "Homepage" ) { %>	
+	<% fragment( "body" ) { %>
+				<table class="screen">
+		<% if( !session?.user ) { %>
+					<tr class="content">
+						<td class="emphasis">Login</td>
+						<td class="content">
+				
+			<form name="loginForm" method="post" action="${link(controller:"homepage",action:"login")}">
+							<input type="hidden" name="changePassWord" value="false" />
+							<table class="form">
+								<tr class="errors">
+									<td colspan="2">
+			<% for( error in args.errors ) { %>
+										Error: ${error}<br/>
+			<% } %>
+									</td>
+								</tr>
+								<tr class="data">
+									<th>Username:</th>
+									<td><input type="text" name="userName" maxlength="100" value=""/></td>
+								</tr>
+								<tr class="data">
+									<th><%="Password:"%></th>
+									<td><input type="password" name="passWord" maxlength="100"/></td>
+								</tr>
+			<% if( false ) { %>
+								<tr class="data">
+									<th>New password:</th>
+									<td><input type="password" name="newPassWord" maxlength="100"/></td>
+								</tr>
+								<tr class="data">
+									<th>Confirm new password:</th>
+									<td><input type="password" name="confirmPassWord" maxlength="100"/></td>
+								</tr>
+			<% } %>
+								<tr class="buttons">
+									<td colspan="2">
+										<input class="button" type="submit" name="checkLogin" value="&#9658; Log In"/>
+			<% if( false ) { %>
+										<input class="button" type="submit" name="savePassword" value="&#9658; Save Password"/>
+			<% } %>
+									</td>
+								</tr>
+							</table>
+			</form>
+
+						</td>
+					</tr>
+					<tr class="spacer" style="height: 8px;"><td colspan="2"/></tr>
+		<% } %>
+					<tr class="content">
+						<td class="emphasis">
+							<table class="news">
+		<% for( lnk in args.links ) { %>
+			<% if( lnk.type == 'C' ) { %>
+								<tr><td class="cat">${lnk.name}</td></tr>
+			<% } else if( lnk.file ) { %>
+								<tr><td class="item"><a href="${link(controller:"homepage",action:"file",id:lnk.id)}" title="${lnk.description}" target="new">${lnk.name}</a></td></tr>
+			<% } else { %>
+								<tr><td class="item"><a href="${(lnk.type=="M"?"mailto:":"")+lnk.link}" title="${lnk.description}" target="new">${lnk.name}</a></td></tr>
+			<% } %>
+		<% } %>
+								<tr><td class="edit"><% if(session?.user?.hasGlobalRole) { %><a href="${link(controller:"editlinks")}">Edit</a><% } %></td></tr>
+								<tr><td class="cat">News</td></tr>
+								<tr><td class="item"><a href="${link(controller:"homepage")}">Current</a></td></tr>
+		<% if( args.archive ) { %>
+								<tr><td class="cat">Archive</td></tr>
+			<% for( archive in args.archive ) { %>
+								<tr><td class="item"><a href="${link(controller:"homepage",newsyear:archive.newi_date)}">${archive.newi_date}</a></td></tr>
+			<% } %>
+		<% } %>
+							</table>
+						</td>
+						<td class="content">
+		<% if( session?.user ) { %>
+							<a href="${link(controller:"test",action:"test1")}">test1</a>
+		<% } %>
+							<table class="form">
+		<% for( newsItem in args.news ) { %>
+								<tr class="data"><td class="nititle">${newsItem.newi_title}</td></tr>
+								<tr class="data"><td class="niauthor">Submitted by ${newsItem.user_fullname} on ${newsItem.newi_date}.</td></tr>
+								<tr class="data"><td class="nibody"><%= encode(newsItem.newi_summary).replaceAll( /\n/, "<br/>" ) %></td></tr>
+								<tr class="data"><td class="niauthor">
+									<a href="${link(controller:"homepage",action:"newsitem",id:newsItem.newi_id)}">Read more</a>
+			<% if( session?.user?.hasGlobalRole ) { %>
+									<a href="${link(controller:"homepage",action:"editnewsitem",id:newsItem.newi_id)}">Edit</a>
+			<% } %>
+								</td></tr>
+								<tr class="data"><td><hr/></td></tr>
+		<% } %>
+		<% if( session?.user?.hasGlobalRole ) { %>
+								<tr class="buttons"><td>
+									<input type="button" value="&#9658; New news item" onclick="document.location.href='updateNewsItem.do'"/>
+								</td></tr>
+		<% } %>
+							</table>
+						</td>
+					</tr>
+
+				</table>
+	<% } %>
+<% } %>
